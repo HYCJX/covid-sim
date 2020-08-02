@@ -6,6 +6,10 @@ cmake_minimum_required (VERSION 3.11)
 # Project initialisation
 project("CovidSim")
 
+# Project uses both C++ and CUDA
+project(CovidSim LANGUAGES CUDA CXX)
+set(CMAKE_CUDA_STANDARD 14)
+
 # Work around some policy behaviours
 if(POLICY CMP0076)
   cmake_policy(SET CMP0076 NEW)
