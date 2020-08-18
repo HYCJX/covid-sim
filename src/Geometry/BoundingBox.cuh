@@ -118,6 +118,11 @@ namespace Geometry {
       return bottom_left_;
     }
 
+    __device__ Vector2<T>& bottom_left_GPU()
+    {
+        return bottom_left_;
+    }
+
     /// Getter
     /// \return The bottom left corner of the bounding box
     const Vector2<T>& bottom_left() const

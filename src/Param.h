@@ -9,7 +9,7 @@
 #include "Kernels.h"
 #include "MicroCellPosition.hpp"
 
-#include "Geometry/BoundingBox.h"
+#include "Geometry/BoundingBox.cuh"
 #include "Geometry/Size.h"
 
 /** @brief Enumeration of bitmap formats. */

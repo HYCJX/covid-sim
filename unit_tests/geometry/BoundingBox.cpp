@@ -1,4 +1,4 @@
-#include "BoundingBox.h"
+#include "BoundingBox.cuh"
 
 // Third party headers
 #include "gtest/gtest.h"

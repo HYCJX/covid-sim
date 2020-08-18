@@ -7,7 +7,7 @@ set(MAIN_SRC_FILES CovidSim.cpp BinIO.cpp Rand.cpp Error.cpp Dist.cpp
 set(MAIN_HDR_FILES CovidSim.h BinIO.h Rand.h Constants.h Country.h Error.h
   Dist.h Kernels.h Bitmap.h Model.h Param.h SetupModel.h ModelMacros.h
   InfStat.h CalcInfSusc.h Sweep.h Update.h MicroCellPosition.hpp Direction.hpp
-  InverseCdf.h Memory.h CLI.h sweep_gpu.cu sweep_gpu.cuh)
+  InverseCdf.h Memory.h CLI.h Sweep_gpu.cu Sweep_gpu.cuh Sweep_gpu_Helper.cu Sweep_gpu_Helper.cuh)
 source_group(covidsim\\main FILES ${MAIN_SRC_FILES} ${MAIN_HDR_FILES})
 
 # CovidSim target
