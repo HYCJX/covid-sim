@@ -1,8 +1,5 @@
 #include "Sweep_gpu_Helper.cuh"
 
-#include <cstdio>
-#include <cmath>
-
 #include "./Models/Cell.h"
 #include "Constants.h"
 #include "InfStat.h"
@@ -54,6 +51,319 @@ __device__ double dist2_raw_GPU(double ax, double ay, double bx, double by, Para
         y = fabs(ay - by);
         return periodic_xy_GPU(x, y, P_GPU);
     }
+}
+
+/* ----- Rand ----- */
+
+__device__ double ranf_mt_GPU(int tn) {
+    int32_t k, s1, s2, z;
+    int curntg;
+
+    curntg = CACHE_LINE_SIZE * tn;
+    s1 = Xcg1[curntg];
+    s2 = Xcg2[curntg];
+    k = s1 / 53668;
+    s1 = Xa1 * (s1 - k * 53668) - k * 12211;
+    if (s1 < 0) s1 += Xm1;
+    k = s2 / 52774;
+    s2 = Xa2 * (s2 - k * 52774) - k * 3791;
+    if (s2 < 0) s2 += Xm2;
+    Xcg1[curntg] = s1;
+    Xcg2[curntg] = s2;
+    z = s1 - s2;
+    if (z < 1) z += (Xm1 - 1);
+    return ((double)z) / Xm1;
+}
+
+__device__ int32_t ignbin_mt_GPU(int32_t n, double pp, int tn) {
+    double psave = -1.0E37;
+    int32_t nsave = -214748365;
+    int32_t ignbin_mt, i, ix, ix1, k, m, mp, T1;
+    double al, alv, amaxp, c, f, f1, f2, ffm, fm, g, p, p1, p2, p3, p4, q, qn, r, u, v, w, w2, x, x1,
+            x2, xl, xll, xlr, xm, xnp, xnpq, xr, ynorm, z, z2;
+
+    /*
+    *****SETUP, PERFORM ONLY WHEN PARAMETERS CHANGE
+    JJV added checks to ensure 0.0 <= PP <= 1.0
+    */
+//    if (pp < 0.0) ERR_CRITICAL("PP < 0.0 in IGNBIN");
+//    if (pp > 1.0) ERR_CRITICAL("PP > 1.0 in IGNBIN");
+    psave = pp;
+    p = std::min(psave, 1.0 - psave);
+    q = 1.0 - p;
+
+    /*
+    JJV added check to ensure N >= 0
+    */
+//    if (n < 0) ERR_CRITICAL("N < 0 in IGNBIN");
+    xnp = n * p;
+    nsave = n;
+    if (xnp < 30.0) goto S140;
+    ffm = xnp + p;
+    m = (int32_t)ffm;
+    fm = m;
+    xnpq = xnp * q;
+    p1 = (int32_t)(2.195 * sqrt(xnpq) - 4.6 * q) + 0.5;
+    xm = fm + 0.5;
+    xl = xm - p1;
+    xr = xm + p1;
+    c = 0.134 + 20.5 / (15.3 + fm);
+    al = (ffm - xl) / (ffm - xl * p);
+    xll = al * (1.0 + 0.5 * al);
+    al = (xr - ffm) / (xr * q);
+    xlr = al * (1.0 + 0.5 * al);
+    p2 = p1 * (1.0 + c + c);
+    p3 = p2 + c / xll;
+    p4 = p3 + c / xlr;
+    S30:
+    /*
+    *****GENERATE VARIATE
+    */
+    u = ranf_mt_GPU(tn) * p4;
+    v = ranf_mt_GPU(tn);
+    /*
+    TRIANGULAR REGION
+    */
+    if (u > p1) goto S40;
+    ix = (int32_t)(xm - p1 * v + u);
+    goto S170;
+    S40:
+    /*
+    PARALLELOGRAM REGION
+    */
+    if (u > p2) goto S50;
+    x = xl + (u - p1) / c;
+    v = v * c + 1.0 - std::abs(xm - x) / p1;
+    if (v > 1.0 || v <= 0.0) goto S30;
+    ix = (int32_t)x;
+    goto S70;
+    S50:
+    /*
+    LEFT TAIL
+    */
+    if (u > p3) goto S60;
+    ix = (int32_t)(xl + log(v) / xll);
+    if (ix < 0) goto S30;
+    v *= ((u - p2) * xll);
+    goto S70;
+    S60:
+    /*
+    RIGHT TAIL
+    */
+    ix = (int32_t)(xr - log(v) / xlr);
+    if (ix > n) goto S30;
+    v *= ((u - p3) * xlr);
+    S70:
+    /*
+    *****DETERMINE APPROPRIATE WAY TO PERFORM ACCEPT/REJECT TEST
+    */
+    k = std::abs(ix - m);
+    if (k > 20 && k < xnpq / 2 - 1) goto S130;
+    /*
+    EXPLICIT EVALUATION
+    */
+    f = 1.0;
+    r = p / q;
+    g = (n + 1) * r;
+    T1 = m - ix;
+    if (T1 < 0) goto S80;
+    else if (T1 == 0) goto S120;
+    else  goto S100;
+    S80:
+    mp = m + 1;
+    for (i = mp; i <= ix; i++) f *= (g / i - r);
+    goto S120;
+    S100:
+    ix1 = ix + 1;
+    for (i = ix1; i <= m; i++) f /= (g / i - r);
+    S120:
+    if (v <= f) goto S170;
+    goto S30;
+    S130:
+    /*
+    SQUEEZING USING UPPER AND LOWER BOUNDS ON ALOG(F(X))
+    */
+    amaxp = k / xnpq * ((k * (k / 3.0 + 0.625) + 0.1666666666666) / xnpq + 0.5);
+    ynorm = -(k * k / (2.0 * xnpq));
+    alv = log(v);
+    if (alv < ynorm - amaxp) goto S170;
+    if (alv > ynorm + amaxp) goto S30;
+    /*
+    STIRLING'S FORMULA TO MACHINE ACCURACY FOR
+    THE FINAL ACCEPTANCE/REJECTION TEST
+    */
+    x1 = ix + 1.0;
+    f1 = fm + 1.0;
+    z = n + 1.0 - fm;
+    w = n - ix + 1.0;
+    z2 = z * z;
+    x2 = x1 * x1;
+    f2 = f1 * f1;
+    w2 = w * w;
+    if (alv <= xm * log(f1 / x1) + (n - m + 0.5) * log(z / w) + (ix - m) * log(w * p / (x1 * q)) + (13860.0 -
+                                                                                                    (462.0 - (132.0 - (99.0 - 140.0 / f2) / f2) / f2) / f2) / f1 / 166320.0 + (13860.0 - (462.0 -
+                                                                                                                                                                                          (132.0 - (99.0 - 140.0 / z2) / z2) / z2) / z2) / z / 166320.0 + (13860.0 - (462.0 - (132.0 -
+                                                                                                                                                                                                                                                                               (99.0 - 140.0 / x2) / x2) / x2) / x2) / x1 / 166320.0 + (13860.0 - (462.0 - (132.0 - (99.0
+                                                                                                                                                                                                                                                                                                                                                                     - 140.0 / w2) / w2) / w2) / w2) / w / 166320.0) goto S170;
+    goto S30;
+    S140:
+    /*
+    INVERSE CDF LOGIC FOR MEAN LESS THAN 30
+    */
+    qn = pow(q, (double)n);
+    r = p / q;
+    g = r * (n + 1);
+    S150:
+    ix = 0;
+    f = qn;
+    u = ranf_mt_GPU(tn);
+    S160:
+    if (u < f) goto S170;
+    if (ix > 110) goto S150;
+    u -= f;
+    ix += 1;
+    f *= (g / ix - r);
+    goto S160;
+    S170:
+    if (psave > 0.5) ix = n - ix;
+    ignbin_mt = ix;
+    return ignbin_mt;
+}
+
+__device__ void SampleWithoutReplacement(int tn, int k, int n, int **SamplingQueue_GPU)
+{
+    /* Based on algorithm SG of http://portal.acm.org/citation.cfm?id=214402
+    ACM Transactions on Mathematical Software (TOMS) archive
+    Volume 11 ,  Issue 2  (June 1985) table of contents
+    Pages: 157 - 169
+    Year of Publication: 1985
+    ISSN:0098-3500
+    */
+
+    double t, r, a, mu, f;
+    int i, j, q, b;
+
+    if (k < 3)
+    {
+        for (i = 0; i < k; i++)
+        {
+            do
+            {
+                SamplingQueue_GPU[tn][i] = (int)(ranf_mt_GPU(tn) * ((double)n));
+// This original formulation is completely valid, but the PVS Studio analyzer
+// notes this, so I am changing it just to get report-clean.
+// "V1008 Consider inspecting the 'for' operator. No more than one iteration of the loop will be performed. Rand.cpp 2450"
+//				for (j = q = 0; (j < i) && (!q); j++)
+//					q = (SamplingQueue[tn][i] == SamplingQueue[tn][j]);
+                j = q = 0;
+                if (i == 1)
+                    q = (SamplingQueue_GPU[tn][i] == SamplingQueue_GPU[tn][j]);
+            } while (q);
+        }
+        q = k;
+    }
+    else if (2 * k > n)
+    {
+        for (i = 0; i < n; i++)
+            SamplingQueue_GPU[tn][i] = i;
+        for (i = n; i > k; i--)
+        {
+            j = (int)(ranf_mt_GPU(tn) * ((double)i));
+            if (j != i - 1)
+            {
+                b = SamplingQueue_GPU[tn][j];
+                SamplingQueue_GPU[tn][j] = SamplingQueue_GPU[tn][i - 1];
+                SamplingQueue_GPU[tn][i - 1] = b;
+            }
+        }
+        q = k;
+    }
+    else if (4 * k > n)
+    {
+        for (i = 0; i < n; i++)
+            SamplingQueue_GPU[tn][i] = i;
+        for (i = 0; i < k; i++)
+        {
+            j = (int)(ranf_mt_GPU(tn) * ((double)(n - i)));
+            if (j > 0)
+            {
+                b = SamplingQueue_GPU[tn][i];
+                SamplingQueue_GPU[tn][i] = SamplingQueue_GPU[tn][i + j];
+                SamplingQueue_GPU[tn][i + j] = b;
+            }
+        }
+        q = k;
+    }
+    else
+    {
+        /* fprintf(stderr,"@%i %i:",k,n); */
+        t = (double)k;
+        r = sqrt(t);
+        a = sqrt(log(1 + t / 2 * PI));
+        a = a + a * a / (3 * r);
+        mu = t + a * r;
+        b = 2 * MAX_PLACE_SIZE; /* (int) (k+4*a*r); */
+        f = -1 / (log(1 - mu / ((double)n)));
+        i = q = 0;
+        while (i <= n)
+        {
+            i += (int)ceil(-log(ranf_mt_GPU(tn)) * f);
+            if (i <= n)
+            {
+                SamplingQueue_GPU[tn][q] = i - 1;
+                q++;
+                if (q >= b) i = q = 0;
+            }
+            else if (q < k)
+                i = q = 0;
+        }
+    }
+    /*	else
+            {
+            t=(double) (n-k);
+            r=sqrt(t);
+            a=sqrt(log(1+t/2*PI));
+            a=a+a*a/(3*r);
+            mu=t+a*r;
+            b=2*MAX_PLACE_SIZE;
+            f=-1/(log(1-mu/((double) n)));
+            i=q=0;
+            while(i<=n)
+                {
+                int i2=i+(int) ceil(-log(ranf_mt(tn))*f);
+                i++;
+                if(i2<=n)
+                    for(;(i<i2)&&(q<b);i++)
+                        {
+                        SamplingQueue[tn][q]=i-1;
+                        q++;
+                        }
+                else
+                    {
+                    for(;(i<=n)&&(q<b);i++)
+                        {
+                        SamplingQueue[tn][q]=i-1;
+                        q++;
+                        }
+                    if(q<k) i=q=0;
+                    }
+                if(q>=b) i=q=0;
+                }
+            }
+    */
+    /*	if(k>2)
+            {
+            fprintf(stderr,"(%i) ",q);
+            for(i=0;i<q;i++) fprintf(stderr,"%i ",SamplingQueue[tn][i]);
+            fprintf(stderr,"\n");
+            }
+    */	while (q > k)
+    {
+        i = (int)(ranf_mt_GPU(tn) * ((double)q));
+        if (i < q - 1) SamplingQueue_GPU[tn][i] = SamplingQueue_GPU[tn][q - 1];
+        q--;
+    }
+
 }
 
 /* ----- CalcinfSusc ----- */
@@ -176,7 +486,7 @@ kernel(double t, int tn, Cell *c, Person *Hosts_GPU, PersonQuarantine *HostsQuar
     double seasonality = data->seasonality, sbeta = data->sbeta, hbeta = data->hbeta;
     double fp = data->fp; // False positive.
     unsigned short int ts = data->ts;
-    FILE *stderr_shared = stderr;
+//    FILE *stderr_shared = stderr;
 
     /* Thread id */
     int j = threadIdx.x + blockIdx.x * blockDim.x;
@@ -246,12 +556,12 @@ kernel(double t, int tn, Cell *c, Person *Hosts_GPU, PersonQuarantine *HostsQuar
                                                P_GPU);        //// FOI ( = infectiousness x susceptibility) from person ci/si on fellow household member i3
 
                     // Force of Infection (s) > random value between 0 and 1
-                    if (ranf_mt(tn) < s) {
+                    if (ranf_mt_GPU(tn) < s) {
                         // identify which cell queue (index cq) to add infection to
                         cq = Hosts_GPU[i3].pcell % P_GPU->NumThreads;
                         if ((StateT_GPU[tn].n_queue[cq] < P_GPU->InfQueuePeakLength)) //(Hosts[i3].infector==-1)&&
                         {
-                            if ((P_GPU->FalsePositiveRate > 0) && (ranf_mt(tn) < P_GPU->FalsePositiveRate))
+                            if ((P_GPU->FalsePositiveRate > 0) && (ranf_mt_GPU(tn) < P_GPU->FalsePositiveRate))
                                 StateT_GPU[tn].inf_queue[cq][StateT_GPU[tn].n_queue[cq]++] = {-1, i3, -1};
                             else {
 
@@ -360,14 +670,14 @@ kernel(double t, int tn, Cell *c, Person *Hosts_GPU, PersonQuarantine *HostsQuar
                             n = Places_GPU[k][l].group_size[i2];
                         } else                //// ... otherwise randomly sample (from binomial distribution) number of potential infectees in this place.
                         {
-                            n = (int) ignbin_mt((int32_t) Places_GPU[k][l].group_size[i2], s4_scaled, tn);
+                            n = (int) ignbin_mt_GPU((int32_t) Places_GPU[k][l].group_size[i2], s4_scaled, tn);
                         }
 
                         // if potential infectees > 0
                         if (n > 0) {
                             // pick n members of place k,l and add them to sampling queue for thread tn
-                            SampleWithoutReplacement(tn, n,
-                                                     Places_GPU[k][l].group_size[i2]); //// changes thread-specific SamplingQueue.
+                            SampleWithoutReplacement_GPU(tn, n,
+                                                     Places_GPU[k][l].group_size[i2], SamplingQueue_GPU); //// changes thread-specific SamplingQueue.
                         }
 
                         // loop over sampling queue of potential infectees
@@ -393,7 +703,7 @@ kernel(double t, int tn, Cell *c, Person *Hosts_GPU, PersonQuarantine *HostsQuar
                                 // if random number < s6
                                 // AND number of contacts of ci(!) is less than maximum digital contact to trace
                                 if ((Hosts_GPU[ci].ncontacts < P_GPU->MaxDigitalContactsToTrace) &&
-                                    (ranf_mt(tn) < s6)) {
+                                    (ranf_mt_GPU(tn) < s6)) {
                                     Hosts_GPU[ci].ncontacts++; //add to number of contacts made
                                     int ad = Mcells_GPU[Hosts_GPU[i3].mcell].adunit;
                                     if ((StateT_GPU[tn].ndct_queue[ad] < AdUnits_GPU[ad].n)) {
@@ -432,7 +742,7 @@ kernel(double t, int tn, Cell *c, Person *Hosts_GPU, PersonQuarantine *HostsQuar
                                 }
 
                                 // if either susceptiblity is 100% or sample probability s
-                                if ((s == 1) || (ranf_mt(tn) < s)) {
+                                if ((s == 1) || (ranf_mt_GPU(tn) < s)) {
                                     // select cell containing potential infectee
                                     cq = Hosts_GPU[i3].pcell % P_GPU->NumThreads;
                                     // if infection queue for selected call < maximum length
@@ -440,7 +750,7 @@ kernel(double t, int tn, Cell *c, Person *Hosts_GPU, PersonQuarantine *HostsQuar
                                          P_GPU->InfQueuePeakLength)) //(Hosts[i3].infector==-1)&&
                                     {
                                         // false positive
-                                        if ((P_GPU->FalsePositiveRate > 0) && (ranf_mt(tn) < P_GPU->FalsePositiveRate))
+                                        if ((P_GPU->FalsePositiveRate > 0) && (ranf_mt_GPU(tn) < P_GPU->FalsePositiveRate))
                                             StateT_GPU[tn].inf_queue[cq][StateT_GPU[tn].n_queue[cq]++] = {-1, i3, -1};
                                         else {
                                             // infect i3 - add if to infection queue for selected cell
@@ -476,9 +786,9 @@ kernel(double t, int tn, Cell *c, Person *Hosts_GPU, PersonQuarantine *HostsQuar
                             // if s3_scaled between 0 and 1, decide number of potential infectees based on
                             // using ignbin_mt function
                         else
-                            n = (int) ignbin_mt((int32_t) Places_GPU[k][l].n, s3_scaled, tn);
+                            n = (int) ignbin_mt_GPU((int32_t) Places_GPU[k][l].n, s3_scaled, tn);
                         // if more than 0 potential infectees, pick n hosts from the hotel and add to sampling queue
-                        if (n > 0) SampleWithoutReplacement(tn, n, Places_GPU[k][l].n);
+                        if (n > 0) SampleWithoutReplacement_GPU(tn, n, Places_GPU[k][l].n, SamplingQueue_GPU);
                         // loop over the sampling queue
                         for (int m = 0; m < n; m++) {
                             // select potential infectee from sampling queue
@@ -504,7 +814,7 @@ kernel(double t, int tn, Cell *c, Person *Hosts_GPU, PersonQuarantine *HostsQuar
                                 s6 = P_GPU->ProportionDigitalContactsIsolate * s;
                                 // if number of contacts of infectious person < maximum and random number < s6
                                 if ((Hosts_GPU[ci].ncontacts < P_GPU->MaxDigitalContactsToTrace) &&
-                                    (ranf_mt(tn) < s6)) {
+                                    (ranf_mt_GPU(tn) < s6)) {
                                     Hosts_GPU[ci].ncontacts++; //add to number of contacts made
                                     int ad = Mcells_GPU[Hosts_GPU[i3].mcell].adunit;
                                     if ((StateT_GPU[tn].ndct_queue[ad] < AdUnits_GPU[ad].n)) {
@@ -545,7 +855,7 @@ kernel(double t, int tn, Cell *c, Person *Hosts_GPU, PersonQuarantine *HostsQuar
                                 // ** do infections **
 
                                 // is susceptibility is 1 (ie infect everyone) or random number is less than susceptibility
-                                if ((s == 1) || (ranf_mt(tn) < s)) {
+                                if ((s == 1) || (ranf_mt_GPU(tn) < s)) {
                                     // store cell number of potential infectee i3 as cq
                                     cq = Hosts_GPU[i3].pcell % P_GPU->NumThreads;
                                     // if there is space in queue for this thread
@@ -553,7 +863,7 @@ kernel(double t, int tn, Cell *c, Person *Hosts_GPU, PersonQuarantine *HostsQuar
                                          P_GPU->InfQueuePeakLength))//(Hosts[i3].infector==-1)&&
                                     {
                                         // if random number < false positive rate
-                                        if ((P_GPU->FalsePositiveRate > 0) && (ranf_mt(tn) < P_GPU->FalsePositiveRate))
+                                        if ((P_GPU->FalsePositiveRate > 0) && (ranf_mt_GPU(tn) < P_GPU->FalsePositiveRate))
                                             // add false positive to infection queue
                                             StateT_GPU[tn].inf_queue[cq][StateT_GPU[tn].n_queue[cq]++] = {-1, i3, -1};
                                         else {

@@ -66,9 +66,12 @@ void InfectSweep_GPU(double t, int run) {
 
             /* --- Copy Data: Host to Device --- */
             // Dist global variables:
-            HANDLE_ERROR(cudaMemcpy(sinx_GPU, sinx, (DEGREES_PER_TURN + 1) * sizeof(double), cudaMemcpyHostToDevice));
-            HANDLE_ERROR(cudaMemcpy(cosx_GPU, cosx, (DEGREES_PER_TURN + 1) * sizeof(double), cudaMemcpyHostToDevice));
-            HANDLE_ERROR(cudaMemcpy(asin2sqx_GPU, asin2sqx, (1001) * sizeof(double), cudaMemcpyHostToDevice));
+            HANDLE_ERROR(cudaMemcpyToSymbol(sinx_GPU, sinx, (DEGREES_PER_TURN + 1) * sizeof(double)));
+            HANDLE_ERROR(cudaMemcpyToSymbol(cosx_GPU, cosx, (DEGREES_PER_TURN + 1) * sizeof(double)));
+            HANDLE_ERROR(cudaMemcpyToSymbol(asin2sqx_GPU, asin2sqx, (1001) * sizeof(double)));
+            // Rand global variables:
+            HANDLE_ERROR(cudaMemcpyToSymbol(Xcg1_GPU, Xcg1, (MAX_NUM_THREADS * CACHE_LINE_SIZE) * sizeof(int32_t)));
+            HANDLE_ERROR(cudaMemcpyToSymbol(Xcg2_GPU, Xcg2, (MAX_NUM_THREADS * CACHE_LINE_SIZE) * sizeof(int32_t)));
             // Cell:
             struct Cell *c_GPU;
             struct Cell *c_Builder;

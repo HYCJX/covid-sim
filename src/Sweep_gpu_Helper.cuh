@@ -41,41 +41,41 @@ kernel(double t, int tn, Cell *c, Person *Hosts_GPU, PersonQuarantine *HostsQuar
 extern __device__ double sinx_GPU[DEGREES_PER_TURN + 1];
 extern __device__ double cosx_GPU[DEGREES_PER_TURN + 1];
 extern __device__ double asin2sqx_GPU[1001];
-
 __device__ double periodic_xy_GPU(double x, double y, Param *P_GPU);
-
 __device__ double dist2UTM_GPU(double x1, double y1, double x2, double y2, Param *P_GPU);
-
 __device__ double dist2_raw_GPU(double ax, double ay, double bx, double by, Param *P_GPU);
 
 /* Rand */
-
+const int32_t Xm1 = 2147483563;
+const int32_t Xm2 = 2147483399;
+const int32_t Xa1 = 40014;
+const int32_t Xa2 = 40692;
+const int32_t Xa1vw = 2082007225;
+const int32_t Xa2vw = 784306273;
+extern __device__ int32_t Xcg1_GPU[MAX_NUM_THREADS * CACHE_LINE_SIZE];
+extern __device__ int32_t Xcg2_GPU[MAX_NUM_THREADS * CACHE_LINE_SIZE];
+__device__ double ranf_mt_GPU(int tn);
+__device__ int32_t ignbin_mt_GPU(int32_t n, double pp, int tn);
+__device__ void SampleWithoutReplacement_GPU(int tn, int k, int n, int **SamplingQueue_GPU);
 
 /* CalcinfSusc */
 __device__ double
 CalcHouseInf_GPU(int j, unsigned short int ts, Person *Hosts_GPU, PersonQuarantine *HostsQuarantine_GPU,
                  Household *Households_GPU, Param *P_GPU);
-
 __device__ double
 CalcPlaceInf_GPU(int j, int k, unsigned short int ts, Person *Hosts_GPU, PersonQuarantine *HostsQuarantine_GPU,
                  Param *P_GPU);
-
 __device__ double
 CalcSpatialInf_GPU(int j, unsigned short int ts, Person *Hosts_GPU, PersonQuarantine *HostsQuarantine_GPU,
                    Param *P_GPU);
-
 __device__ double CalcPersonInf_GPU(int j, unsigned short int ts, Person *Hosts_GPU, Param *P_GPU);
-
 __device__ double
 CalcHouseSusc_GPU(int ai, unsigned short int ts, int infector, int tn, Person *Hosts_GPU, Microcell *Mcells_GPU,
                   Param *P_GPU);
-
 __device__ double CalcPlaceSusc_GPU(int ai, int k, unsigned short int ts, int infector, int tn, Person *Hosts_GPU,
                                     PersonQuarantine *HostsQuarantine_GPU, Microcell *Mcells_GPU, Param *P_GPU);
-
 __device__ double CalcSpatialSusc_GPU(int ai, unsigned short int ts, int infector, int tn, Person *Hosts_GPU,
                                       PersonQuarantine *HostsQuarantine_GPU, Microcell *Mcells_GPU, Param *P_GPU);
-
 __device__ double
 CalcPersonSusc_GPU(int ai, unsigned short int ts, int infector, int tn, Person *Hosts_GPU, Param *P_GPU);
 
