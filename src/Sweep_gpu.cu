@@ -7,16 +7,12 @@
 #include "Sweep_gpu_Helper.cuh"
 #include "CalcInfSusc.h"
 #include "Dist.h"
-#include "Error.h"
 #include "InfStat.h"
 #include "Model.h"
 #include "ModelMacros.h"
 #include "Param.h"
 #include "Rand.h"
 #include "Update.h"
-
-/* Helpers for CUDA */
-__global__ void kernel();
 
 void HANDLE_ERROR(cudaError_t error);
 
@@ -74,7 +70,7 @@ void InfectSweep_GPU(double t, int run) {
             HANDLE_ERROR(cudaMemcpyToSymbol(Xcg2_GPU, Xcg2, (MAX_NUM_THREADS * CACHE_LINE_SIZE) * sizeof(int32_t)));
             // Cell:
             struct Cell *c_GPU;
-            struct Cell *c_Builder;
+            struct Cell *c_Builder = (Cell *) malloc(sizeof(Cell));
             c_Builder->I = c->I;
             HANDLE_ERROR(cudaMalloc((void **) &c_Builder->infected, c->I * sizeof(int)));
             HANDLE_ERROR(cudaMemcpy(c_Builder->infected, c->infected, c->I * sizeof(int), cudaMemcpyHostToDevice));
@@ -125,7 +121,7 @@ void InfectSweep_GPU(double t, int run) {
                 HANDLE_ERROR(cudaMemcpy(Places_Builder[i], Struct_Builder[i], P.Nplace[i] * sizeof(struct Place),
                                         cudaMemcpyHostToDevice));
             }
-            HANDLE_ERROR(cudaMemcpy(Places_GPU, Places_Builder, P.Nplace[i] * sizeof(struct Place *),
+            HANDLE_ERROR(cudaMemcpy(Places_GPU, Places_Builder, P.PlaceTypeNum * sizeof(struct Place *),
                                     cudaMemcpyHostToDevice));
             // AdUnits:
             struct AdminUnit *AdUnits_GPU;
@@ -170,9 +166,15 @@ void InfectSweep_GPU(double t, int run) {
             struct Data *data;
             HANDLE_ERROR(cudaMalloc((void **) &data, sizeof(struct Data)));
             struct Data *h_data = (struct Data *) malloc(sizeof(struct Data));
+            h_data->bm = bm;
             h_data->s5 = s5;
+            h_data->seasonality = seasonality;
+            h_data->sbeta = sbeta;
+            h_data->hbeta = hbeta;
             h_data->fp = fp;
             h_data->ts = ts;
+            h_data->need_exit = false;
+            h_data->exit_num = 0;
             HANDLE_ERROR(cudaMemcpy(data, h_data, sizeof(struct Data), cudaMemcpyHostToDevice));
             /* ---                           --- */
 
@@ -182,6 +184,9 @@ void InfectSweep_GPU(double t, int run) {
             HANDLE_ERROR(cudaEventCreate(&stop));
             HANDLE_ERROR(cudaEventRecord(start, 0));
             /* ---                   --- */
+
+            kernel<<<1, 1>>>(t, tn, c_GPU, Hosts_GPU, HostsQuarantine_GPU, Households_GPU, Mcells_GPU, Places_GPU,
+                             AdUnits_GPU, SamplingQueue, StateT_GPU, P_GPU, data);
 
             /* --- Stop Time Record --- */
             HANDLE_ERROR(cudaEventRecord(stop, 0));
@@ -236,7 +241,10 @@ void InfectSweep_GPU(double t, int run) {
             HANDLE_ERROR(cudaMemcpy(h_data, data, sizeof(struct Data), cudaMemcpyDeviceToHost));
             HANDLE_ERROR(cudaFree(data));
             s5 = h_data->s5;
-            free(data);
+            if (h_data->need_exit) {
+                exit(h_data->exit_num);
+            }
+            free(h_data);
             /* ---                           --- */
 
             //// Now allocate spatial infections using Force Of Infection (s5) calculated above

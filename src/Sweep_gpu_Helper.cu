@@ -4,6 +4,7 @@
 #include "Constants.h"
 #include "InfStat.h"
 #include "Model.h"
+#include "Rand.h"
 
 /* ----- Dist ----- */
 
@@ -60,16 +61,16 @@ __device__ double ranf_mt_GPU(int tn) {
     int curntg;
 
     curntg = CACHE_LINE_SIZE * tn;
-    s1 = Xcg1[curntg];
-    s2 = Xcg2[curntg];
+    s1 = Xcg1_GPU[curntg];
+    s2 = Xcg2_GPU[curntg];
     k = s1 / 53668;
     s1 = Xa1 * (s1 - k * 53668) - k * 12211;
     if (s1 < 0) s1 += Xm1;
     k = s2 / 52774;
     s2 = Xa2 * (s2 - k * 52774) - k * 3791;
     if (s2 < 0) s2 += Xm2;
-    Xcg1[curntg] = s1;
-    Xcg2[curntg] = s2;
+    Xcg1_GPU[curntg] = s1;
+    Xcg2_GPU[curntg] = s2;
     z = s1 - s2;
     if (z < 1) z += (Xm1 - 1);
     return ((double)z) / Xm1;
@@ -89,7 +90,7 @@ __device__ int32_t ignbin_mt_GPU(int32_t n, double pp, int tn) {
 //    if (pp < 0.0) ERR_CRITICAL("PP < 0.0 in IGNBIN");
 //    if (pp > 1.0) ERR_CRITICAL("PP > 1.0 in IGNBIN");
     psave = pp;
-    p = std::min(psave, 1.0 - psave);
+    p = min(psave, 1.0 - psave);
     q = 1.0 - p;
 
     /*
@@ -230,7 +231,7 @@ __device__ int32_t ignbin_mt_GPU(int32_t n, double pp, int tn) {
     return ignbin_mt;
 }
 
-__device__ void SampleWithoutReplacement(int tn, int k, int n, int **SamplingQueue_GPU)
+__device__ void SampleWithoutReplacement_GPU(int tn, int k, int n, int **SamplingQueue_GPU)
 {
     /* Based on algorithm SG of http://portal.acm.org/citation.cfm?id=214402
     ACM Transactions on Mathematical Software (TOMS) archive
@@ -476,7 +477,7 @@ kernel(double t, int tn, Cell *c, Person *Hosts_GPU, PersonQuarantine *HostsQuar
 
     /* Variables */
     int n ; // Number of people you could potentially infect in your place group, then number of potential spatial infections doled out by cell on other cells.
-    int f, f2, cq /* Cell queue */, bm = data->bm /* Movement restrictions in place */, ci /* Person index */;
+    int f, cq /* Cell queue */, bm = data->bm /* Movement restrictions in place */, ci /* Person index */;
     double s; // Household Force Of Infection (FOI) on fellow household member, then place susceptibility, then random number for spatial infections allocation.
     double s2; // Spatial infectiousness, then distance in spatial infections allocation.
     double s3, s3_scaled; // Household, then place infectiousness.
@@ -658,8 +659,8 @@ kernel(double t, int tn, Cell *c, Person *Hosts_GPU, PersonQuarantine *HostsQuar
                         // if infectiousness is < 0, we have an error - end the program
                         if (s4_scaled < 0) {
                             // fprintf(stderr_shared, "@@@ %lg\n", s4_scaled);
-                            need_exit = true;
-                            exit_num = 1;
+                            data->need_exit = true;
+                            data->exit_num = 1;
                             return;
                         }
                             // else if infectiousness == 1 (should never be more than 1 due to capping above)

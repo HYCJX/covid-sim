@@ -118,10 +118,12 @@ namespace Geometry {
       return bottom_left_;
     }
 
+#ifdef __CUDACC__
     __device__ Vector2<T>& bottom_left_GPU()
     {
         return bottom_left_;
     }
+#endif
 
     /// Getter
     /// \return The bottom left corner of the bounding box

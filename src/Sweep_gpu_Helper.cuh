@@ -15,6 +15,8 @@ struct Data {
     double seasonality, sbeta, hbeta;
     double fp; // False positive.
     unsigned short int ts;
+    bool need_exit;
+    int exit_num;
 };
 
 /* Computation Kernel */
@@ -46,12 +48,6 @@ __device__ double dist2UTM_GPU(double x1, double y1, double x2, double y2, Param
 __device__ double dist2_raw_GPU(double ax, double ay, double bx, double by, Param *P_GPU);
 
 /* Rand */
-const int32_t Xm1 = 2147483563;
-const int32_t Xm2 = 2147483399;
-const int32_t Xa1 = 40014;
-const int32_t Xa2 = 40692;
-const int32_t Xa1vw = 2082007225;
-const int32_t Xa2vw = 784306273;
 extern __device__ int32_t Xcg1_GPU[MAX_NUM_THREADS * CACHE_LINE_SIZE];
 extern __device__ int32_t Xcg2_GPU[MAX_NUM_THREADS * CACHE_LINE_SIZE];
 __device__ double ranf_mt_GPU(int tn);
