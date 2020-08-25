@@ -1,3 +1,5 @@
+#include "../Country.h"
+
 #pragma once
 
 /**

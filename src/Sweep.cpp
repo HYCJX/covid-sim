@@ -15,6 +15,7 @@
 #include "Sweep.h"
 #include "Update.h"
 
+#include "Test_Kernel.cuh"
 
 void TravelReturnSweep(double t)
 {
@@ -317,6 +318,9 @@ void InfectSweep(double t, int run) //added run number as argument in order to r
 	bm = ((P.DoBlanketMoveRestr) && (t >= P.MoveRestrTimeStart) && (t < P.MoveRestrTimeStart + P.MoveRestrDuration));
 	// File for storing error reports
 	FILE* stderr_shared = stderr;
+
+    Cell* c1 = CellLookup[10]; // select Cell given by index b
+//    test_all(c1);
 	
 #pragma omp parallel for private(n,f,f2,s,s2,s3,s4,s5,s6,cq,ci,s3_scaled,s4_scaled) schedule(static,1) default(none) \
 		shared(t, P, CellLookup, Hosts, AdUnits, Households, Places, SamplingQueue, Cells, Mcells, StateT, hbeta, sbeta, seasonality, ts, fp, bm, stderr_shared)
@@ -524,7 +528,8 @@ void InfectSweep(double t, int run) //added run number as argument in order to r
 									// loop over sampling queue of potential infectees
 									for (int m = 0; m < n; m++)
 									{
-										// pick potential infectee index i3
+                                        test_Places(k,l,-1,-1,-1);
+                                        // pick potential infectee index i3
 										int i3 = Places[k][l].members[Places[k][l].group_start[i2] + SamplingQueue[tn][m]];
 										// calculate place susceptbility based on infectee (i3), place type (k), timestep (ts)
 										// cell (ci) and thread number (tn)

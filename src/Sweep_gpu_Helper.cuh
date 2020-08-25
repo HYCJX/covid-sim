@@ -1,14 +1,18 @@
-#include <Models/Household.h>
-#include <Models/Microcell.h>
-#include <Models/Person.h>
-#include "Param.h"
-#include "Model.h"
-#include "Sweep_gpu.cuh"
-
 #ifndef COVIDSIM_SWEEP_GPU_HELPER_CUH
 #define COVIDSIM_SWEEP_GPU_HELPER_CUH
 
-// Infect sweep variables:
+#include "Models/Cell.h"
+#include "Models/Household.h"
+#include "Models/Microcell.h"
+#include "Models/Person.h"
+#include "Constants.h"
+#include "InfStat.h"
+#include "Model.h"
+#include "Param.h"
+#include "Rand.h"
+#include "Sweep_gpu.cuh"
+
+/* Infect sweep variables */
 struct Data {
     int bm /* Movement restrictions in place */;
     double s5; // Total spatial infectiousness summed over all infectious people in cell.

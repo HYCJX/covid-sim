@@ -3,16 +3,20 @@
 # Set up the IDE
 set(MAIN_SRC_FILES CovidSim.cpp BinIO.cpp Rand.cpp Error.cpp Dist.cpp
   Kernels.cpp Bitmap.cpp SetupModel.cpp CalcInfSusc.cpp Sweep.cpp Update.cpp
-  Param.cpp Direction.cpp InverseCdf.cpp Memory.cpp CLI.cpp)
+  Param.cpp Direction.cpp InverseCdf.cpp Memory.cpp CLI.cpp Sweep_gpu.cu Sweep_gpu_Helper.cu Test_Kernel.cu )
 set(MAIN_HDR_FILES CovidSim.h BinIO.h Rand.h Constants.h Country.h Error.h
   Dist.h Kernels.h Bitmap.h Model.h Param.h SetupModel.h ModelMacros.h
   InfStat.h CalcInfSusc.h Sweep.h Update.h MicroCellPosition.hpp Direction.hpp
-  InverseCdf.h Memory.h CLI.h Sweep_gpu.cu Sweep_gpu.cuh Sweep_gpu_Helper.cu Sweep_gpu_Helper.cuh)
+  InverseCdf.h Memory.h CLI.h Sweep_gpu.cuh Sweep_gpu_Helper.cuh Test_Kernel.cuh)
 source_group(covidsim\\main FILES ${MAIN_SRC_FILES} ${MAIN_HDR_FILES})
 
 # CovidSim target
 add_executable(CovidSim ${MAIN_SRC_FILES} ${MAIN_HDR_FILES})
 target_include_directories(CovidSim PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+set_target_properties(
+        CovidSim
+        PROPERTIES
+        CUDA_SEPARABLE_COMPILATION ON)
 
 add_subdirectory(Geometry)
 add_subdirectory(Models)

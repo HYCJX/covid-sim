@@ -1519,6 +1519,7 @@ void SetupPopulation(std::string const& density_file, std::string const& out_den
 		for (int k = 0; k < P.NumThreads; k++)
 			StateT[i].inf_queue[k] = (Infection*)Memory::xcalloc(P.InfQueuePeakLength, sizeof(Infection));
 		StateT[i].cell_inf = (float*)Memory::xcalloc(l + 1, sizeof(float));
+		StateT[i].cell_inf_length = l + 1;
 		StateT[i].host_closure_queue = (HostClosure*)Memory::xcalloc(P.InfQueuePeakLength, sizeof(HostClosure));
 	}
 
