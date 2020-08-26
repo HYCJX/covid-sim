@@ -114,15 +114,15 @@ __global__ void kernel_test_places(Place **Places_GPU, int i, int j, int group_s
     printf("GPU: Places[%d][%d].mcell = %d.\n", i, j, Places_GPU[i][j].mcell);
     printf("GPU: Places[%d][%d].loc.x = %9.6f.\n", i, j, Places_GPU[i][j].loc.x);
     printf("GPU: Places[%d][%d].loc.y = %9.6f.\n", i, j, Places_GPU[i][j].loc.y);
-    if (group_start_i >= 0) {
-        printf("GPU: Places[%d][%d].group_start[%d] = %d.\n", i, j, group_start_i, Places_GPU[i][j].group_start[group_start_i]);
-    }
-    if (group_size_i >= 0) {
-        printf("GPU: Places[%d][%d].group_size[%d] = %d.\n", i, j, group_size_i, Places_GPU[i][j].group_size[group_size_i]);
-    }
-    if (members_i >= 0) {
-        printf("GPU: Places[%d][%d].members[%d] = %d.\n", i, j, members_i, Places_GPU[i][j].members[members_i]);
-    }
+//    if (group_start_i >= 0) {
+//        printf("GPU: Places[%d][%d].group_start[%d] = %d.\n", i, j, group_start_i, Places_GPU[i][j].group_start[group_start_i]);
+//    }
+//    if (group_size_i >= 0) {
+//        printf("GPU: Places[%d][%d].group_size[%d] = %d.\n", i, j, group_size_i, Places_GPU[i][j].group_size[group_size_i]);
+//    }
+//    if (members_i >= 0) {
+//        printf("GPU: Places[%d][%d].members[%d] = %d.\n", i, j, members_i, Places_GPU[i][j].members[members_i]);
+//    }
 }
 
 void test_Places(int i, int j, int group_start_i, int group_size_i, int members_i){
@@ -161,8 +161,8 @@ void test_Places(int i, int j, int group_start_i, int group_size_i, int members_
     }
     handle_error(cudaMemcpy(Places_GPU, Places_Builder, P.PlaceTypeNum * sizeof(struct Place *),cudaMemcpyHostToDevice));
 
-//    kernel_test_places<<<1,1>>>(Places_GPU, i, j, group_start_i, group_size_i, members_i);
-//    handle_error(cudaDeviceSynchronize());
+    kernel_test_places<<<1,1>>>(Places_GPU, i, j, group_start_i, group_size_i, members_i);
+    handle_error(cudaDeviceSynchronize());
 
     for (int m = 0; m < P.PlaceTypeNum; m++) {
         for (int n = 0; n < P.Nplace[m]; n++) {
@@ -177,6 +177,7 @@ void test_Places(int i, int j, int group_start_i, int group_size_i, int members_
         handle_error(cudaFree(Places_Builder[i]));
     }
     handle_error(cudaFree(Places_GPU));
+
     /* --- Stop Time Record --- */
     handle_error(cudaEventRecord(stop, 0));
     handle_error(cudaEventSynchronize(stop));
@@ -212,6 +213,13 @@ __global__ void kernel_test_SamplingQueue(int **SamplingQueue_GPU, int i, int j)
 }
 
 void test_SamplingQueue(int i, int j) {
+    /* --- Start Time Record --- */
+    cudaEvent_t start, stop;
+    handle_error(cudaEventCreate(&start));
+    handle_error(cudaEventCreate(&stop));
+    handle_error(cudaEventRecord(start, 0));
+    /* ---                   --- */
+
     int **SamplingQueue_GPU;
     int *SamplingQueue_Builder[P.NumThreads];
     handle_error(cudaMalloc((void **) &SamplingQueue_GPU, P.NumThreads * sizeof(int *)));
@@ -230,6 +238,16 @@ void test_SamplingQueue(int i, int j) {
         handle_error(cudaFree(SamplingQueue_Builder[i]));
     }
     cudaFree(SamplingQueue_GPU);
+
+    /* --- Stop Time Record --- */
+    handle_error(cudaEventRecord(stop, 0));
+    handle_error(cudaEventSynchronize(stop));
+    float elapsedTime;
+    handle_error(cudaEventElapsedTime(&elapsedTime, start, stop));
+    printf("Data Transfer Time: %3.lf ms.\n", elapsedTime);
+    handle_error(cudaEventDestroy(start));
+    handle_error(cudaEventDestroy(stop));
+    /* ---                  --- */
 }
 
 /* ----- Test StateT ----- */
@@ -360,34 +378,50 @@ void test_all(Cell *c) {
     handle_error(cudaMalloc((void **) &Mcells_GPU, P.NMC * sizeof(struct Microcell)));
     handle_error(cudaMemcpy(Mcells_GPU, Mcells, P.NMC * sizeof(struct Microcell), cudaMemcpyHostToDevice));
     // Places:
-    struct Place **Struct_Builder = (struct Place **) malloc(P.PlaceTypeNum * sizeof(struct Place *));
-    for (int p = 0; p < P.PlaceTypeNum; p++) {
-        Struct_Builder[p] = (struct Place *) malloc(P.Nplace[p] * sizeof(struct Place));
-        for (int q = 0; q < P.Nplace[p]; q++) {
-            Place place = Places[p][q];
-            Struct_Builder[p][q] = place;
-            handle_error(cudaMalloc((void **) &Struct_Builder[p][q].group_start, place.ng * sizeof(int)));
-            handle_error(cudaMemcpy(Struct_Builder[p][q].group_start, place.group_start, place.ng * sizeof(int), cudaMemcpyHostToDevice));
-            handle_error(cudaMalloc((void **) &Struct_Builder[p][q].group_size, place.ng * sizeof(int)));
-            handle_error(cudaMemcpy(Struct_Builder[p][q].group_size, place.group_size, place.ng * sizeof(int), cudaMemcpyHostToDevice));
-            if (p == P.HotelPlaceType) {
-                handle_error(cudaMalloc((void **) &Struct_Builder[p][q].members, 2 * ((int)P.PlaceTypeMeanSize[p]) * sizeof(int)));
-                handle_error(cudaMemcpy(Struct_Builder[p][q].members, place.members, 2 * ((int)P.PlaceTypeMeanSize[p]) * sizeof(int), cudaMemcpyHostToDevice));
-            } else {
-                handle_error(cudaMalloc((void **) &Struct_Builder[p][q].members, place.n * sizeof(int)));
-                handle_error(cudaMemcpy(Struct_Builder[p][q].members, place.members, place.n * sizeof(int), cudaMemcpyHostToDevice));
-            }
-        }
+//    struct Place **Struct_Builder = (struct Place **) malloc(P.PlaceTypeNum * sizeof(struct Place *));
+//    for (int p = 0; p < P.PlaceTypeNum; p++) {
+//        Struct_Builder[p] = (struct Place *) malloc(P.Nplace[p] * sizeof(struct Place));
+//        for (int q = 0; q < P.Nplace[p]; q++) {
+//            Place place = Places[p][q];
+//            Struct_Builder[p][q] = place;
+//            handle_error(cudaMalloc((void **) &Struct_Builder[p][q].group_start, place.ng * sizeof(int)));
+//            handle_error(cudaMemcpy(Struct_Builder[p][q].group_start, place.group_start, place.ng * sizeof(int), cudaMemcpyHostToDevice));
+//            handle_error(cudaMalloc((void **) &Struct_Builder[p][q].group_size, place.ng * sizeof(int)));
+//            handle_error(cudaMemcpy(Struct_Builder[p][q].group_size, place.group_size, place.ng * sizeof(int), cudaMemcpyHostToDevice));
+//            if (p == P.HotelPlaceType) {
+//                handle_error(cudaMalloc((void **) &Struct_Builder[p][q].members, 2 * ((int)P.PlaceTypeMeanSize[p]) * sizeof(int)));
+//                handle_error(cudaMemcpy(Struct_Builder[p][q].members, place.members, 2 * ((int)P.PlaceTypeMeanSize[p]) * sizeof(int), cudaMemcpyHostToDevice));
+//            } else {
+//                handle_error(cudaMalloc((void **) &Struct_Builder[p][q].members, place.n * sizeof(int)));
+//                handle_error(cudaMemcpy(Struct_Builder[p][q].members, place.members, place.n * sizeof(int), cudaMemcpyHostToDevice));
+//            }
+//        }
+//    }
+//    struct Place **Places_GPU;
+//    struct Place *Places_Builder[P.PlaceTypeNum];
+//    handle_error(cudaMalloc((void **) &Places_GPU, P.PlaceTypeNum * sizeof(struct Place *)));
+//    for (int m = 0; m < P.PlaceTypeNum; m++) {
+//        handle_error(cudaMalloc((void **) &Places_Builder[m], P.Nplace[m] * sizeof(struct Place)));
+//        handle_error(cudaMemcpy(Places_Builder[m], Struct_Builder[m], P.Nplace[m] * sizeof(struct Place), cudaMemcpyHostToDevice));
+//    }
+//    handle_error(cudaMemcpy(Places_GPU, Places_Builder, P.PlaceTypeNum * sizeof(struct Place *),cudaMemcpyHostToDevice));
+    // AdUnits:
+    struct AdminUnit *AdUnits_GPU;
+    handle_error(cudaMalloc((void **) &AdUnits_GPU, MAX_ADUNITS * sizeof(struct AdminUnit)));
+    handle_error(cudaMemcpy(AdUnits_GPU, AdUnits, MAX_ADUNITS * sizeof(struct AdminUnit), cudaMemcpyHostToDevice));
+    // SamplingQueue:
+    int **SamplingQueue_GPU;
+    int *SamplingQueue_Builder[P.NumThreads];
+    handle_error(cudaMalloc((void **) &SamplingQueue_GPU, P.NumThreads * sizeof(int *)));
+    for (int i = 0; i < P.NumThreads; i++) {
+        handle_error(cudaMalloc((void **) &SamplingQueue_Builder[i], 2 * (MAX_PLACE_SIZE + CACHE_LINE_SIZE) * sizeof(int)));
+        handle_error(cudaMemcpy(SamplingQueue_Builder[i], SamplingQueue[i], 2 * (MAX_PLACE_SIZE + CACHE_LINE_SIZE) * sizeof(int), cudaMemcpyHostToDevice));
     }
-    struct Place **Places_GPU;
-    struct Place *Places_Builder[P.PlaceTypeNum];
-    handle_error(cudaMalloc((void **) &Places_GPU, P.PlaceTypeNum * sizeof(struct Place *)));
-    for (int m = 0; m < P.PlaceTypeNum; m++) {
-        handle_error(cudaMalloc((void **) &Places_Builder[m], P.Nplace[m] * sizeof(struct Place)));
-        handle_error(cudaMemcpy(Places_Builder[m], Struct_Builder[m], P.Nplace[m] * sizeof(struct Place), cudaMemcpyHostToDevice));
-    }
-    handle_error(cudaMemcpy(Places_GPU, Places_Builder, P.PlaceTypeNum * sizeof(struct Place *),cudaMemcpyHostToDevice));
-
+    handle_error(cudaMemcpy(SamplingQueue_GPU, SamplingQueue_Builder, P.NumThreads * sizeof(int *), cudaMemcpyHostToDevice));
+    // P:
+    struct Param *P_GPU;
+    handle_error(cudaMalloc((void **) &P_GPU, sizeof(struct Param)));
+    handle_error(cudaMemcpy(P_GPU, &P, sizeof(struct Param), cudaMemcpyHostToDevice));
     /* ---                           --- */
 
     /* --- Copy Data: Device to Host & Free Memory --- */
@@ -405,20 +439,31 @@ void test_all(Cell *c) {
     // Mcells:
     handle_error(cudaFree(Mcells_GPU));
     // Places:
-    for (int m = 0; m < P.PlaceTypeNum; m++) {
-        for (int n = 0; n < P.Nplace[m]; n++) {
-            handle_error(cudaFree(Struct_Builder[m][n].group_start));
-            handle_error(cudaFree(Struct_Builder[m][n].group_size));
-            handle_error(cudaFree(Struct_Builder[m][n].members));
-        }
-        free(Struct_Builder[m]);
+//    for (int m = 0; m < P.PlaceTypeNum; m++) {
+//        for (int n = 0; n < P.Nplace[m]; n++) {
+//            handle_error(cudaFree(Struct_Builder[m][n].group_start));
+//            handle_error(cudaFree(Struct_Builder[m][n].group_size));
+//            handle_error(cudaFree(Struct_Builder[m][n].members));
+//        }
+//        free(Struct_Builder[m]);
+//    }
+//    free(Struct_Builder);
+//    for (int i = 0; i < P.PlaceTypeNum; i++) {
+//        handle_error(cudaFree(Places_Builder[i]));
+//    }
+//    handle_error(cudaFree(Places_GPU));
+    // AdUnits:
+    handle_error(cudaFree(AdUnits_GPU));
+    // SamplingQueue:
+    handle_error(cudaMemcpy(SamplingQueue_Builder, SamplingQueue_GPU, P.NumThreads * sizeof(int *),cudaMemcpyDeviceToHost));
+    for (int i = 0; i < P.NumThreads; i++) {
+        handle_error(cudaMemcpy(SamplingQueue[i], SamplingQueue_Builder[i], 2 * (MAX_PLACE_SIZE + CACHE_LINE_SIZE) * sizeof(int), cudaMemcpyDeviceToHost));
+        handle_error(cudaFree(SamplingQueue_Builder[i]));
     }
-    free(Struct_Builder);
-    for (int i = 0; i < P.PlaceTypeNum; i++) {
-        handle_error(cudaFree(Places_Builder[i]));
-    }
-    handle_error(cudaFree(Places_GPU));
-
+    cudaFree(SamplingQueue_GPU);
+    // P:
+    handle_error(cudaMemcpy(&P, P_GPU, sizeof(struct Param), cudaMemcpyDeviceToHost));
+    handle_error(cudaFree(P_GPU));
     /* ---                                         --- */
 
     /* --- Stop Time Record --- */
