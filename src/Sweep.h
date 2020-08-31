@@ -1,6 +1,9 @@
 #ifndef COVIDSIM_SWEEP_H_INCLUDED_
 #define COVIDSIM_SWEEP_H_INCLUDED_
 
+extern int turn;
+extern double total_time;
+
 void TravelReturnSweep(double);
 void TravelDepartSweep(double);
 void InfectSweep(double, int); //added int as argument to InfectSweep to record run number: ggilani - 15/10/14

@@ -289,6 +289,10 @@ int main(int argc, char* argv[])
 	for (auto const& int_file : InterventionFiles)
 		ReadInterventions(int_file);
 
+	// Initialize timer for Infect Sweep:
+	total_time = 0;
+	turn = 0;
+
 	fprintf(stderr, "Model setup in %lf seconds\n", ((double)(clock() - cl)) / CLOCKS_PER_SEC);
 
 
@@ -409,6 +413,11 @@ int main(int argc, char* argv[])
 			//SaveSummaryResults();
 
 			Bitmap_Finalise();
+
+			// Print Infect Sweep time information:
+			fprintf(stderr, "\nInfectSweep is called %d times.\n", turn);
+			fprintf(stderr, "\nTotal time of running InfectSweep: %f.\n", total_time);
+			fprintf(stderr, "\nAverage time of running InfectSweep: %f.\n", total_time / (double) turn);
 
 			fprintf(stderr, "Extinction in %i out of %i runs\n", P.NRactE, P.NRactNE + P.NRactE);
 			fprintf(stderr, "Model ran in %lf seconds\n", ((double)(clock() - cl)) / CLOCKS_PER_SEC);

@@ -2,6 +2,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <cstdio>
+#include <omp.h>
 
 #include "CalcInfSusc.h"
 #include "Dist.h"
@@ -278,7 +279,11 @@ void InfectSweep(double t, int run) //added run number as argument in order to r
 	//// Susceptibility is (broadly) a function of 2 people (a person's susceptibility TO ANOTHER PERSON / potential infector)
 	//// After loop 1a) over infectious people, spatial infections are doled out.
 
-	int n; //// number of people you could potentially infect in your place group, then number of potential spatial infections doled out by cell on other cells.
+    double duration;
+    double start;
+    start = omp_get_wtime();
+
+    int n; //// number of people you could potentially infect in your place group, then number of potential spatial infections doled out by cell on other cells.
 	int f, f2, cq /*cell queue*/, bm/*movement restrictions in place*/, ci /*person index*/;
 	double seasonality, sbeta, hbeta;
 	//// various quantities of force of infection, including "infectiousness" and "susceptibility" components
@@ -976,6 +981,10 @@ void InfectSweep(double t, int run) //added run number as argument in order to r
 			StateT[k].n_queue[j] = 0;
 		}
 	}
+
+	duration = omp_get_wtime() - start;
+	total_time += duration;
+	turn++;
 }
 
 void IncubRecoverySweep(double t, int run)
