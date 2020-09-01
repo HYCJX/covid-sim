@@ -16,6 +16,8 @@
 #include "Sweep.h"
 #include "Update.h"
 
+int turn;
+double total_time;
 
 void TravelReturnSweep(double t)
 {
