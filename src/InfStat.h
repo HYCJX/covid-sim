@@ -45,9 +45,9 @@ enum struct Severity {
 	Critical,
 	//// Recovering from Critical (not recovered yet).
 	RecoveringFromCritical,
-	//// label to avoid double counting. Not sure you need.
+	//// label to avoid float counting. Not sure you need.
 	Dead,
-	//// label to avoid double counting. Not sure you need.
+	//// label to avoid float counting. Not sure you need.
 	Recovered
 };
 

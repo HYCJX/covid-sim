@@ -47,7 +47,7 @@ namespace Geometry {
     /// Expand to the grid
     /// \param width width
     /// \param height height
-    void to_grid(const double& width, const double& height)
+    void to_grid(const float& width, const float& height)
     {
       this->x = ceil(this->x / width ) * width;
       this->y = ceil(this->y / height) * height;
@@ -92,7 +92,7 @@ namespace Geometry {
     /// Expand to the grid
     /// \param width width
     /// \param height height
-    void to_grid(const double& width, const double& height)
+    void to_grid(const float& width, const float& height)
     {
       this->x = floor(this->x / width ) * width;
       this->y = floor(this->y / height) * height;
@@ -150,7 +150,7 @@ namespace Geometry {
     /// Expand to the grid
     /// \param width width
     /// \param height height
-    void to_grid(const double& width, const double& height)
+    void to_grid(const float& width, const float& height)
     {
       top_right_.to_grid(width, height);
       bottom_left_.to_grid(width, height);
@@ -158,21 +158,21 @@ namespace Geometry {
 
     /// Calculate the width
     /// \return The width
-    double width() const
+    float width() const
     {
       return top_right_.x - bottom_left_.x;
     }
 
     /// Calculate the height
     /// \return The height
-    double height() const
+    float height() const
     {
       return top_right_.y - bottom_left_.y;
     }
   };
 
-  /// Specialisation of BoundingBox for double
-  class BoundingBox2d : public BoundingBox2<double>
+  /// Specialisation of BoundingBox for float
+  class BoundingBox2d : public BoundingBox2<float>
   {
   public:
     /// Set the minimum to working infinity and maximum to minus working infinity
@@ -184,7 +184,7 @@ namespace Geometry {
 
     /// Expand the bounds to fit the given point
     /// \param p Point
-    void expand(const Vector2d& p)
+    void expand(const Vector2f& p)
     {
       bottom_left_.expand(p);
       top_right_.expand(p, 1e-6);

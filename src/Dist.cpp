@@ -7,13 +7,13 @@
 
 #include "Model.h"
 
-double sinx[DEGREES_PER_TURN + 1], cosx[DEGREES_PER_TURN + 1], asin2sqx[1001];
+float sinx[DEGREES_PER_TURN + 1], cosx[DEGREES_PER_TURN + 1], asin2sqx[1001];
 
 //// **** //// **** //// **** //// **** //// **** //// **** //// **** //// **** //// **** //// **** //// **** //// **** //// **** //// **** //// **** //// **** //// **** //// ****
 //// **** DISTANCE FUNCTIONS (return distance-squared, which is input for every Kernel function)
 //// **** //// **** //// **** //// **** //// **** //// **** //// **** //// **** //// **** //// **** //// **** //// **** //// **** //// **** //// **** //// **** //// **** //// ****
 
-double periodic_xy(double x, double y) {
+float periodic_xy(float x, float y) {
 	if (P.DoPeriodicBoundaries)
 	{
 		if (x > P.in_degrees_.width * 0.5) x = P.in_degrees_.width - x;
@@ -22,9 +22,9 @@ double periodic_xy(double x, double y) {
 	return x * x + y * y;
 }
 
-double dist2UTM(double x1, double y1, double x2, double y2)
+float dist2UTM(float x1, float y1, float x2, float y2)
 {
-	double x, y, cy1, cy2, yt, xi, yi;
+	float x, y, cy1, cy2, yt, xi, yi;
 
 	x = fabs(x1 - x2) / 2;
 	y = fabs(y1 - y2) / 2;
@@ -48,9 +48,9 @@ double dist2UTM(double x1, double y1, double x2, double y2)
 	y = (1 - x) * asin2sqx[((int)xi)] + x * asin2sqx[((int)xi) + 1];
 	return 4 * EARTHRADIUS * EARTHRADIUS * y;
 }
-double dist2(Person* a, Person* b)
+float dist2(Person* a, Person* b)
 {
-	double x, y;
+	float x, y;
 
 	if (P.DoUTM_coords)
 		return dist2UTM(Households[a->hh].loc.x, Households[a->hh].loc.y, Households[b->hh].loc.x, Households[b->hh].loc.y);
@@ -61,26 +61,26 @@ double dist2(Person* a, Person* b)
 		return periodic_xy(x, y);
 	}
 }
-double dist2_cc(Cell* a, Cell* b)
+float dist2_cc(Cell* a, Cell* b)
 {
-	double x, y;
+	float x, y;
 	int l, m;
 
 	l = (int)(a - Cells);
 	m = (int)(b - Cells);
 	if (P.DoUTM_coords)
-		return dist2UTM(P.in_cells_.width * fabs((double)(l / P.nch)), P.in_cells_.height * fabs((double)(l % P.nch)),
-			P.in_cells_.width * fabs((double)(m / P.nch)), P.in_cells_.height * fabs((double)(m % P.nch)));
+		return dist2UTM(P.in_cells_.width * fabs((float)(l / P.nch)), P.in_cells_.height * fabs((float)(l % P.nch)),
+			P.in_cells_.width * fabs((float)(m / P.nch)), P.in_cells_.height * fabs((float)(m % P.nch)));
 	else
 	{
-		x = P.in_cells_.width * fabs((double)(l / P.nch - m / P.nch));
-		y = P.in_cells_.height * fabs((double)(l % P.nch - m % P.nch));
+		x = P.in_cells_.width * fabs((float)(l / P.nch - m / P.nch));
+		y = P.in_cells_.height * fabs((float)(l % P.nch - m % P.nch));
 		return periodic_xy(x, y);
 	}
 }
-double dist2_cc_min(Cell* a, Cell* b)
+float dist2_cc_min(Cell* a, Cell* b)
 {
-	double x, y;
+	float x, y;
 	int l, m, i, j;
 
 	l = (int)(a - Cells);
@@ -88,7 +88,7 @@ double dist2_cc_min(Cell* a, Cell* b)
 	i = l; j = m;
 	if (P.DoUTM_coords)
 	{
-		if (P.in_cells_.width * ((double)abs(m / P.nch - l / P.nch)) > PI)
+		if (P.in_cells_.width * ((float)abs(m / P.nch - l / P.nch)) > PI)
 		{
 			if (m / P.nch > l / P.nch)
 				j += P.nch;
@@ -106,12 +106,12 @@ double dist2_cc_min(Cell* a, Cell* b)
 			i++;
 		else if (m % P.nch < l % P.nch)
 			j++;
-		return dist2UTM(P.in_cells_.width * fabs((double)(i / P.nch)), P.in_cells_.height * fabs((double)(i % P.nch)),
-			P.in_cells_.width * fabs((double)(j / P.nch)), P.in_cells_.height * fabs((double)(j % P.nch)));
+		return dist2UTM(P.in_cells_.width * fabs((float)(i / P.nch)), P.in_cells_.height * fabs((float)(i % P.nch)),
+			P.in_cells_.width * fabs((float)(j / P.nch)), P.in_cells_.height * fabs((float)(j % P.nch)));
 	}
 	else
 	{
-		if ((P.DoPeriodicBoundaries) && (P.in_cells_.width * ((double)abs(m / P.nch - l / P.nch)) > P.in_degrees_.width * 0.5))
+		if ((P.DoPeriodicBoundaries) && (P.in_cells_.width * ((float)abs(m / P.nch - l / P.nch)) > P.in_degrees_.width * 0.5))
 		{
 			if (m / P.nch > l / P.nch)
 				j += P.nch;
@@ -125,7 +125,7 @@ double dist2_cc_min(Cell* a, Cell* b)
 			else if (m / P.nch < l / P.nch)
 				j += P.nch;
 		}
-		if ((P.DoPeriodicBoundaries) && (P.in_degrees_.height * ((double)abs(m % P.nch - l % P.nch)) > P.in_degrees_.height * 0.5))
+		if ((P.DoPeriodicBoundaries) && (P.in_degrees_.height * ((float)abs(m % P.nch - l % P.nch)) > P.in_degrees_.height * 0.5))
 		{
 			if (m % P.nch > l % P.nch)
 				j++;
@@ -139,32 +139,32 @@ double dist2_cc_min(Cell* a, Cell* b)
 			else if (m % P.nch < l % P.nch)
 				j++;
 		}
-		x = P.in_cells_.width * fabs((double)(i / P.nch - j / P.nch));
-		y = P.in_cells_.height * fabs((double)(i % P.nch - j % P.nch));
+		x = P.in_cells_.width * fabs((float)(i / P.nch - j / P.nch));
+		y = P.in_cells_.height * fabs((float)(i % P.nch - j % P.nch));
 		return periodic_xy(x, y);
 	}
 }
-double dist2_mm(Microcell* a, Microcell* b)
+float dist2_mm(Microcell* a, Microcell* b)
 {
-	double x, y;
+	float x, y;
 	int l, m;
 
 	l = (int)(a - Mcells);
 	m = (int)(b - Mcells);
 	if (P.DoUTM_coords)
-		return dist2UTM(P.in_microcells_.width * fabs((double)(l / P.total_microcells_high_)), P.in_microcells_.height * fabs((double)(l % P.total_microcells_high_)),
-			P.in_microcells_.width * fabs((double)(m / P.total_microcells_high_)), P.in_microcells_.height * fabs((double)(m % P.total_microcells_high_)));
+		return dist2UTM(P.in_microcells_.width * fabs((float)(l / P.total_microcells_high_)), P.in_microcells_.height * fabs((float)(l % P.total_microcells_high_)),
+			P.in_microcells_.width * fabs((float)(m / P.total_microcells_high_)), P.in_microcells_.height * fabs((float)(m % P.total_microcells_high_)));
 	else
 	{
-		x = P.in_microcells_.width * fabs((double)(l / P.total_microcells_high_ - m / P.total_microcells_high_));
-		y = P.in_microcells_.height * fabs((double)(l % P.total_microcells_high_ - m % P.total_microcells_high_));
+		x = P.in_microcells_.width * fabs((float)(l / P.total_microcells_high_ - m / P.total_microcells_high_));
+		y = P.in_microcells_.height * fabs((float)(l % P.total_microcells_high_ - m % P.total_microcells_high_));
 		return periodic_xy(x, y);
 	}
 }
 
-double dist2_raw(double ax, double ay, double bx, double by)
+float dist2_raw(float ax, float ay, float bx, float by)
 {
-	double x, y;
+	float x, y;
 
 	if (P.DoUTM_coords)
 		return dist2UTM(ax, ay, bx, by);

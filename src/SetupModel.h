@@ -96,7 +96,7 @@ const int NETWORK_FILE_VERSION = 1;
 
 struct BinFile
 {
-	double x, y, pop;
+	float x, y, pop;
 	int cnt, ad;
 };
 

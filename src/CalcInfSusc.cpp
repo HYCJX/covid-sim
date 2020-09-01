@@ -9,7 +9,7 @@
 
 //// Infectiousness functions (House, Place, Spatial, Person). Idea is that in addition to a person's personal infectiousness, they have separate "infectiousnesses" for their house, place and on other cells (spatial).
 //// These functions consider one person only. A person has an infectiousness that is independent of other people. Slightly different therefore than susceptibility functions.
-double CalcHouseInf(int j, unsigned short int ts)
+float CalcHouseInf(int j, unsigned short int ts)
 {
 	return	((HOST_ISOLATED(j) && (Hosts[j].digitalContactTraced != 1)) ? P.CaseIsolationHouseEffectiveness : 1.0)
 		*	((Hosts[j].digitalContactTraced==1) ? P.DCTCaseIsolationHouseEffectiveness : 1.0)
@@ -22,7 +22,7 @@ double CalcHouseInf(int j, unsigned short int ts)
 		*   P.infectiousness[ts - Hosts[j].latent_time - 1];
 }
 
-double CalcPlaceInf(int j, int k, unsigned short int ts)
+float CalcPlaceInf(int j, int k, unsigned short int ts)
 {
 	return	((HOST_ISOLATED(j) && (Hosts[j].digitalContactTraced != 1)) ? P.CaseIsolationEffectiveness : 1.0)
 		*	((Hosts[j].digitalContactTraced==1) ? P.DCTCaseIsolationEffectiveness : 1.0)
@@ -31,7 +31,7 @@ double CalcPlaceInf(int j, int k, unsigned short int ts)
 		*	P.PlaceTypeTrans[k] / P.PlaceTypeGroupSizeParam1[k] * CalcPersonInf(j, ts);
 }
 
-double CalcSpatialInf(int j, unsigned short int ts)
+float CalcSpatialInf(int j, unsigned short int ts)
 {
 	return	((HOST_ISOLATED(j) && (Hosts[j].digitalContactTraced != 1)) ? P.CaseIsolationEffectiveness : 1.0)
 		*	((Hosts[j].digitalContactTraced==1) ? P.DCTCaseIsolationEffectiveness : 1.0)
@@ -41,7 +41,7 @@ double CalcSpatialInf(int j, unsigned short int ts)
 		*	CalcPersonInf(j, ts); 		/*	*Hosts[j].spatial_norm */
 }
 
-double CalcPersonInf(int j, unsigned short int ts)
+float CalcPersonInf(int j, unsigned short int ts)
 {
 	return	(HOST_TREATED(j) ? P.TreatInfDrop : 1.0)
 		*	(HOST_VACCED(j) ? P.VaccInfDrop : 1.0)
@@ -51,26 +51,26 @@ double CalcPersonInf(int j, unsigned short int ts)
 
 //// Susceptibility functions (House, Place, Spatial, Person). Similarly, idea is that in addition to a person's personal susceptibility, they have separate "susceptibilities" for their house, place and on other cells (spatial)
 //// These functions consider two people. A person has a susceptibility TO ANOTHER PERSON/infector. Slightly different therefore than infectiousness functions.
-double CalcHouseSusc(int ai, unsigned short int ts, int infector, int tn)
+float CalcHouseSusc(int ai, unsigned short int ts, int infector, int tn)
 {
 	return CalcPersonSusc(ai, ts, infector, tn)
 		* ((Mcells[Hosts[ai].mcell].socdist == 2) ? ((Hosts[ai].esocdist_comply) ? P.EnhancedSocDistHouseholdEffectCurrent : P.SocDistHouseholdEffectCurrent) : 1.0)
 		* ((Hosts[ai].digitalContactTraced==1) ? P.DCTCaseIsolationHouseEffectiveness : 1.0)
 		* ((Hosts[ai].care_home_resident) ? P.CareHomeResidentHouseholdScaling : 1.0);
 }
-double CalcPlaceSusc(int ai, int k, unsigned short int ts, int infector, int tn)
+float CalcPlaceSusc(int ai, int k, unsigned short int ts, int infector, int tn)
 {
 	return		((HOST_QUARANTINED(ai) && (!Hosts[ai].care_home_resident) && (Hosts[ai].digitalContactTraced != 1)) ? P.HQuarantinePlaceEffect[k] : 1.0)
 		* ((Mcells[Hosts[ai].mcell].socdist == 2) ? ((Hosts[ai].esocdist_comply) ? P.EnhancedSocDistPlaceEffectCurrent[k] : P.SocDistPlaceEffectCurrent[k]) : 1.0)
 		* ((Hosts[ai].digitalContactTraced==1) ? P.DCTCaseIsolationEffectiveness : 1.0);
 }
-double CalcSpatialSusc(int ai, unsigned short int ts, int infector, int tn)
+float CalcSpatialSusc(int ai, unsigned short int ts, int infector, int tn)
 {
 	return	 ((HOST_QUARANTINED(ai) && (!Hosts[ai].care_home_resident) && (Hosts[ai].digitalContactTraced != 1)) ? P.HQuarantineSpatialEffect : 1.0)
 		* ((Mcells[Hosts[ai].mcell].socdist == 2) ? ((Hosts[ai].esocdist_comply) ? P.EnhancedSocDistSpatialEffectCurrent : P.SocDistSpatialEffectCurrent) : 1.0)
 		* ((Hosts[ai].digitalContactTraced == 1) ? P.DCTCaseIsolationEffectiveness : 1.0);
 }
-double CalcPersonSusc(int ai, unsigned short int ts, int infector, int tn)
+float CalcPersonSusc(int ai, unsigned short int ts, int infector, int tn)
 {
 	return		P.WAIFW_Matrix[HOST_AGE_GROUP(ai)][HOST_AGE_GROUP(infector)]
 		* P.AgeSusceptibility[HOST_AGE_GROUP(ai)] * Hosts[ai].susc

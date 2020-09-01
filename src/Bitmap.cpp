@@ -32,9 +32,9 @@ void CaptureBitmap()
 {
 	int x, y, f, mi;
 	unsigned j;
-	static double logMaxPop;
+	static float logMaxPop;
 	static int fst = 1;
-	double prev;
+	float prev;
 
 	mi = (int)(P.b.width * P.b.height);
 	if (fst)
@@ -56,7 +56,7 @@ void CaptureBitmap()
 				}
 			}
 		}
-		logMaxPop = log(1.001 * (double)maxPop);
+		logMaxPop = log(1.001 * (float)maxPop);
 		for (int i = 0; i < P.NMC; i++)
 			if (Mcells[i].n > 0)
 			{
@@ -69,8 +69,8 @@ void CaptureBitmap()
 				if ((i >= P.total_microcells_high_) && (Mcells[i - P.total_microcells_high_].n > 0) && (mcell_country[i] != mcell_country[i - P.total_microcells_high_])) f = 1;
 				if (f)
 				{
-					x = (int)(P.in_microcells_.width * (((double)(i / P.total_microcells_high_)) + 0.5) * P.scale.x) - P.bmin.x;
-					y = (int)(P.in_microcells_.height * (((double)(i % P.total_microcells_high_)) + 0.5) * P.scale.y) - P.bmin.y;
+					x = (int)(P.in_microcells_.width * (((float)(i / P.total_microcells_high_)) + 0.5) * P.scale.x) - P.bmin.x;
+					y = (int)(P.in_microcells_.height * (((float)(i % P.total_microcells_high_)) + 0.5) * P.scale.y) - P.bmin.y;
 					if ((x >= 0) && (x < P.b.width) && (y >= 0) && (y < P.b.height))
 					{
 						j = y * bmh->width + x;
@@ -80,7 +80,7 @@ void CaptureBitmap()
 			}
 		for (int i = 0; i < P.b.width / 2; i++)
 		{
-			prev = floor(3.99999 * ((double)i) * BWCOLS / ((double)P.b.width) * 2);
+			prev = floor(3.99999 * ((float)i) * BWCOLS / ((float)P.b.width) * 2);
 			f = ((int)prev);
 			for (j = 0; j < 10; j++)
 			{
@@ -95,13 +95,13 @@ void CaptureBitmap()
 		if (bmPopulation[i] == -1)
 			bmPixels[i] = BWCOLS - 1; /* black for country boundary */
 		else if (bmInfected[i] > 0)
-			bmPixels[i] = (unsigned char)(BWCOLS + BWCOLS * log((double)bmInfected[i]) / logMaxPop); /* red for infected */
+			bmPixels[i] = (unsigned char)(BWCOLS + BWCOLS * log((float)bmInfected[i]) / logMaxPop); /* red for infected */
 		else if (bmTreated[i] > 0)
-			bmPixels[i] = (unsigned char)(2 * BWCOLS + BWCOLS * log((double)bmTreated[i]) / logMaxPop); /* blue for treated */
+			bmPixels[i] = (unsigned char)(2 * BWCOLS + BWCOLS * log((float)bmTreated[i]) / logMaxPop); /* blue for treated */
 		else if (bmRecovered[i] > 0)
-			bmPixels[i] = (unsigned char)(3 * BWCOLS + BWCOLS * log((double)bmRecovered[i]) / logMaxPop);  /* green for recovered */
+			bmPixels[i] = (unsigned char)(3 * BWCOLS + BWCOLS * log((float)bmRecovered[i]) / logMaxPop);  /* green for recovered */
 		else if (bmPopulation[i] > 0)
-			bmPixels[i] = (unsigned char)(BWCOLS * log((double)bmPopulation[i]) / logMaxPop); /* grey for just people */
+			bmPixels[i] = (unsigned char)(BWCOLS * log((float)bmPopulation[i]) / logMaxPop); /* grey for just people */
 		else
 			bmPixels[i] = 0;
 	}

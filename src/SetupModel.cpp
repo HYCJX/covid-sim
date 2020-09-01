@@ -32,7 +32,7 @@ void SetupModel(std::string const& density_file, std::string const& out_density_
 {
 	int l, m, j2, l2, m2;
 	unsigned int rn;
-	double t, s, s2, t2;
+	float t, s, s2, t2;
 	char buf[2048];
 	FILE* dat;
 
@@ -73,19 +73,19 @@ void SetupModel(std::string const& density_file, std::string const& out_density_
 			while(fgets(buf, sizeof(buf), dat) != NULL)
 			{
 				int i2;
-				double x, y;
+				float x, y;
 				// This shouldn't be able to happen, as we just counted the number of lines:
 				if (index == P.BinFileLen) ERR_CRITICAL("Too many input lines while reading density file\n");
 				if (P.DoAdUnits)
 				{
-					sscanf(buf, "%lg %lg %lg %i %i", &x, &y, &t, &i2, &l);
+					sscanf(buf, "%g %g %g %i %i", &x, &y, &t, &i2, &l);
 					if (l / P.CountryDivisor != i2)
 					{
-						//fprintf(stderr,"# %lg %lg %lg %i %i\n",x,y,t,i2,l);
+						//fprintf(stderr,"# %g %g %g %i %i\n",x,y,t,i2,l);
 					}
 				}
 				else {
-					sscanf(buf, "%lg %lg %lg %i", &x, &y, &t, &i2);
+					sscanf(buf, "%g %g %g %i", &x, &y, &t, &i2);
 					l = 0;
 				}
 				// Ensure we use an x which gives us a contiguous whole for the
@@ -117,12 +117,12 @@ void SetupModel(std::string const& density_file, std::string const& out_density_
 			s2 = 0;
 			for (rn = 0; rn < P.BinFileLen; rn++)
 			{
-				double x = BF[rn].x;
-				double y = BF[rn].y;
+				float x = BF[rn].x;
+				float y = BF[rn].y;
 				t = BF[rn].pop;
 				int i2 = BF[rn].cnt;
 				l = BF[rn].ad;
-				//					fprintf(stderr,"# %lg %lg %lg %i\t",x,y,t,l);
+				//					fprintf(stderr,"# %g %g %g %i\t",x,y,t,l);
 
 				m = (l % P.AdunitLevel1Mask) / P.AdunitLevel1Divisor;
 				if (P.AdunitLevel1Lookup[m] >= 0)
@@ -132,7 +132,7 @@ void SetupModel(std::string const& density_file, std::string const& out_density_
 						s2 += t;
 						// Adjust the bounds of the spatial bounding box so that they include the location
 						// for this block of population.
-						P.SpatialBoundingBox.expand(Geometry::Vector2d(x, y));
+						P.SpatialBoundingBox.expand(Geometry::Vector2f(x, y));
 					}
 			}
 			if (!P.DoSpecifyPop) P.PopSize = (int)s2;
@@ -144,12 +144,12 @@ void SetupModel(std::string const& density_file, std::string const& out_density_
 		P.in_degrees_.height = P.SpatialBoundingBox.height();
 		P.ncw = 4 * ((int)ceil(P.in_degrees_.width / P.in_cells_.width / 4));
 		P.nch = 4 * ((int)ceil(P.in_degrees_.height / P.in_cells_.height / 4));
-		P.in_degrees_.width = ((double)P.ncw) * P.in_cells_.width;
-		P.in_degrees_.height = ((double)P.nch) * P.in_cells_.height;
+		P.in_degrees_.width = ((float)P.ncw) * P.in_cells_.width;
+		P.in_degrees_.height = ((float)P.nch) * P.in_cells_.height;
 		P.SpatialBoundingBox.top_right() = P.SpatialBoundingBox.bottom_left()
-			+ Geometry::Vector2d(P.in_degrees_.width, P.in_degrees_.height);
+			+ Geometry::Vector2f(P.in_degrees_.width, P.in_degrees_.height);
 		P.NC = P.ncw * P.nch;
-		fprintf(stderr, "Adjusted bounding box = (%lg, %lg)- (%lg, %lg)\n",
+		fprintf(stderr, "Adjusted bounding box = (%g, %g)- (%g, %g)\n",
 				P.SpatialBoundingBox.bottom_left().x, P.SpatialBoundingBox.bottom_left().y,
 				P.SpatialBoundingBox.top_right().x,   P.SpatialBoundingBox.top_right().y);
 		fprintf(stderr, "Number of cells = %i (%i x %i)\n", P.NC, P.ncw, P.nch);
@@ -165,17 +165,17 @@ void SetupModel(std::string const& density_file, std::string const& out_density_
 	}
 	else
 	{
-		P.ncw = P.nch = (int)sqrt((double)P.NC);
+		P.ncw = P.nch = (int)sqrt((float)P.NC);
 		P.NC = P.ncw * P.nch;
 		fprintf(stderr, "Number of cells adjusted to be %i (%i^2)\n", P.NC, P.ncw);
-		s = floor(sqrt((double)P.PopSize));
-		P.SpatialBoundingBox.bottom_left() = Geometry::Vector2d(0.0, 0.0);
-		P.SpatialBoundingBox.top_right() = Geometry::Vector2d(s, s);
+		s = floor(sqrt((float)P.PopSize));
+		P.SpatialBoundingBox.bottom_left() = Geometry::Vector2f(0.0, 0.0);
+		P.SpatialBoundingBox.top_right() = Geometry::Vector2f(s, s);
 		P.PopSize = (int)(s * s);
-		fprintf(stderr, "Population size adjusted to be %i (%lg^2)\n", P.PopSize, s);
+		fprintf(stderr, "Population size adjusted to be %i (%g^2)\n", P.PopSize, s);
 		P.in_degrees_.width = P.in_degrees_.height = s;
-		P.in_cells_.width = P.in_degrees_.width / ((double)P.ncw);
-		P.in_cells_.height = P.in_degrees_.height / ((double)P.nch);
+		P.in_cells_.width = P.in_degrees_.width / ((float)P.ncw);
+		P.in_cells_.height = P.in_degrees_.height / ((float)P.nch);
 	}
 	P.NMC = P.NMCL * P.NMCL * P.NC;
 	P.total_microcells_wide_ = P.ncw * P.NMCL;
@@ -192,8 +192,8 @@ void SetupModel(std::string const& density_file, std::string const& out_density_
 	fprintf(stderr, "Bitmap width = %i\nBitmap height = %i\n", P.b.width, P.b.height);
 	P.bmin.x = (int)(P.in_degrees_.width * P.BoundingBox.bottom_left().x * P.scale.x);
 	P.bmin.y = (int)(P.in_degrees_.height * P.BoundingBox.bottom_left().y * P.scale.y);
-	P.in_microcells_.width = P.in_cells_.width / ((double)P.NMCL);
-	P.in_microcells_.height = P.in_cells_.height / ((double)P.NMCL);
+	P.in_microcells_.width = P.in_cells_.width / ((float)P.NMCL);
+	P.in_microcells_.height = P.in_cells_.height / ((float)P.NMCL);
 	for (int i = 0; i < P.NumSeedLocations; i++)
 	{
 		P.LocationInitialInfection[i][0] -= P.SpatialBoundingBox.bottom_left().x;
@@ -201,14 +201,14 @@ void SetupModel(std::string const& density_file, std::string const& out_density_
 	}
 	// Find longest distance - may not be diagonally across the bounding box.
 	t = dist2_raw(0, 0, P.in_degrees_.width, P.in_degrees_.height);
-	double tw = dist2_raw(0, 0, P.in_degrees_.width, 0);
-	double th = dist2_raw(0, 0, 0, P.in_degrees_.height);
+	float tw = dist2_raw(0, 0, P.in_degrees_.width, 0);
+	float th = dist2_raw(0, 0, 0, P.in_degrees_.height);
 	if (tw > t) t = tw;
 	if (th > t) t = th;
 	if (P.DoPeriodicBoundaries) t *= 0.25;
 	P.KernelLookup.setup(t);
-	//	fprintf(stderr,"** %i %lg %lg %lg %lg | %lg %lg %lg %lg \n",P.DoUTM_coords,P.SpatialBoundingBox[0],P.SpatialBoundingBox[1],P.SpatialBoundingBox[2],P.SpatialBoundingBox[3],P.width,P.height,t,P.KernelDelta);
-	fprintf(stderr, "Coords xmcell=%lg m   ymcell = %lg m\n",
+	//	fprintf(stderr,"** %i %g %g %g %g | %g %g %g %g \n",P.DoUTM_coords,P.SpatialBoundingBox[0],P.SpatialBoundingBox[1],P.SpatialBoundingBox[2],P.SpatialBoundingBox[3],P.width,P.height,t,P.KernelDelta);
+	fprintf(stderr, "Coords xmcell=%g m   ymcell = %g m\n",
 		sqrt(dist2_raw(P.in_degrees_.width / 2, P.in_degrees_.height / 2, P.in_degrees_.width / 2 + P.in_microcells_.width, P.in_degrees_.height / 2)),
 		sqrt(dist2_raw(P.in_degrees_.width / 2, P.in_degrees_.height / 2, P.in_degrees_.width / 2, P.in_degrees_.height / 2 + P.in_microcells_.height)));
 	t2 = 0.0;
@@ -245,27 +245,27 @@ void SetupModel(std::string const& density_file, std::string const& out_density_
 
 		for (int Time = 0; Time < P.NumSamples; Time++)
 		{
-			TimeSeries[Time].prevInf_age_adunit = (double**)Memory::xcalloc(NUM_AGE_GROUPS, sizeof(double*));
-			TimeSeries[Time].incInf_age_adunit = (double**)Memory::xcalloc(NUM_AGE_GROUPS, sizeof(double*));
-			TimeSeries[Time].cumInf_age_adunit = (double**)Memory::xcalloc(NUM_AGE_GROUPS, sizeof(double*));
-			TSMeanE [Time].prevInf_age_adunit = (double**)Memory::xcalloc(NUM_AGE_GROUPS, sizeof(double*));
-			TSMeanE [Time].incInf_age_adunit = (double**)Memory::xcalloc(NUM_AGE_GROUPS, sizeof(double*));
-			TSMeanE [Time].cumInf_age_adunit = (double**)Memory::xcalloc(NUM_AGE_GROUPS, sizeof(double*));
-			TSMeanNE[Time].prevInf_age_adunit = (double**)Memory::xcalloc(NUM_AGE_GROUPS, sizeof(double*));
-			TSMeanNE[Time].incInf_age_adunit = (double**)Memory::xcalloc(NUM_AGE_GROUPS, sizeof(double*));
-			TSMeanNE[Time].cumInf_age_adunit = (double**)Memory::xcalloc(NUM_AGE_GROUPS, sizeof(double*));
+			TimeSeries[Time].prevInf_age_adunit = (float**)Memory::xcalloc(NUM_AGE_GROUPS, sizeof(float*));
+			TimeSeries[Time].incInf_age_adunit = (float**)Memory::xcalloc(NUM_AGE_GROUPS, sizeof(float*));
+			TimeSeries[Time].cumInf_age_adunit = (float**)Memory::xcalloc(NUM_AGE_GROUPS, sizeof(float*));
+			TSMeanE [Time].prevInf_age_adunit = (float**)Memory::xcalloc(NUM_AGE_GROUPS, sizeof(float*));
+			TSMeanE [Time].incInf_age_adunit = (float**)Memory::xcalloc(NUM_AGE_GROUPS, sizeof(float*));
+			TSMeanE [Time].cumInf_age_adunit = (float**)Memory::xcalloc(NUM_AGE_GROUPS, sizeof(float*));
+			TSMeanNE[Time].prevInf_age_adunit = (float**)Memory::xcalloc(NUM_AGE_GROUPS, sizeof(float*));
+			TSMeanNE[Time].incInf_age_adunit = (float**)Memory::xcalloc(NUM_AGE_GROUPS, sizeof(float*));
+			TSMeanNE[Time].cumInf_age_adunit = (float**)Memory::xcalloc(NUM_AGE_GROUPS, sizeof(float*));
 
 			for (int AgeGroup = 0; AgeGroup < NUM_AGE_GROUPS; AgeGroup++)
 			{
-				TimeSeries[Time].prevInf_age_adunit[AgeGroup] = (double*)Memory::xcalloc(P.NumAdunits, sizeof(double));
-				TimeSeries[Time].incInf_age_adunit[AgeGroup] = (double*)Memory::xcalloc(P.NumAdunits, sizeof(double));
-				TimeSeries[Time].cumInf_age_adunit[AgeGroup] = (double*)Memory::xcalloc(P.NumAdunits, sizeof(double));
-				TSMeanE[Time].prevInf_age_adunit[AgeGroup] = (double*)Memory::xcalloc(P.NumAdunits, sizeof(double));
-				TSMeanE[Time].incInf_age_adunit[AgeGroup] = (double*)Memory::xcalloc(P.NumAdunits, sizeof(double));
-				TSMeanE[Time].cumInf_age_adunit[AgeGroup] = (double*)Memory::xcalloc(P.NumAdunits, sizeof(double));
-				TSMeanNE[Time].prevInf_age_adunit[AgeGroup] = (double*)Memory::xcalloc(P.NumAdunits, sizeof(double));
-				TSMeanNE[Time].incInf_age_adunit[AgeGroup] = (double*)Memory::xcalloc(P.NumAdunits, sizeof(double));
-				TSMeanNE[Time].cumInf_age_adunit[AgeGroup] = (double*)Memory::xcalloc(P.NumAdunits, sizeof(double));
+				TimeSeries[Time].prevInf_age_adunit[AgeGroup] = (float*)Memory::xcalloc(P.NumAdunits, sizeof(float));
+				TimeSeries[Time].incInf_age_adunit[AgeGroup] = (float*)Memory::xcalloc(P.NumAdunits, sizeof(float));
+				TimeSeries[Time].cumInf_age_adunit[AgeGroup] = (float*)Memory::xcalloc(P.NumAdunits, sizeof(float));
+				TSMeanE[Time].prevInf_age_adunit[AgeGroup] = (float*)Memory::xcalloc(P.NumAdunits, sizeof(float));
+				TSMeanE[Time].incInf_age_adunit[AgeGroup] = (float*)Memory::xcalloc(P.NumAdunits, sizeof(float));
+				TSMeanE[Time].cumInf_age_adunit[AgeGroup] = (float*)Memory::xcalloc(P.NumAdunits, sizeof(float));
+				TSMeanNE[Time].prevInf_age_adunit[AgeGroup] = (float*)Memory::xcalloc(P.NumAdunits, sizeof(float));
+				TSMeanNE[Time].incInf_age_adunit[AgeGroup] = (float*)Memory::xcalloc(P.NumAdunits, sizeof(float));
+				TSMeanNE[Time].cumInf_age_adunit[AgeGroup] = (float*)Memory::xcalloc(P.NumAdunits, sizeof(float));
 			}
 		}
 	}
@@ -310,7 +310,7 @@ void SetupModel(std::string const& density_file, std::string const& out_density_
 	CovidSim::TBD1::KernelLookup::init(P.KernelLookup, CellLookup, P.NCP);
 
 	for (int i = 0; i < P.PopSize; i++) Hosts[i].keyworker = Hosts[i].care_home_resident = 0;
-	double nstaff = 0, nres = 0;
+	float nstaff = 0, nres = 0;
 	if ((P.CareHomePlaceType >= 0) && (P.CareHomeResidentMinimumAge < 1000))  // label care home residents as they don't have household contacts
 	{
 		for (int i = 0; i < P.PopSize; i++)
@@ -328,13 +328,13 @@ void SetupModel(std::string const& density_file, std::string const& out_density_
 	}
 	else
 		P.CareHomePropResidents = 0.0;
-	fprintf(stderr, "%lg care home residents\n%lg care home workers\n", nres, nstaff);
+	fprintf(stderr, "%g care home residents\n%g care home workers\n", nres, nstaff);
 	P.KeyWorkerNum = P.KeyWorkerIncHouseNum = m = l = 0;
 	if (P.DoPlaces)
 	{
 		while ((m < P.KeyWorkerPopNum) && (l < 1000))
 		{
-			int i = (int)(((double)P.PopSize) * ranf_mt(0));
+			int i = (int)(((float)P.PopSize) * ranf_mt(0));
 			if (Hosts[i].keyworker)
 				l++;
 			else
@@ -362,7 +362,7 @@ void SetupModel(std::string const& density_file, std::string const& out_density_
 			m = l = 0;
 			while ((m < P.KeyWorkerPlaceNum[j]) && (l < 1000))
 			{
-				int k = (int)(((double)P.Nplace[j]) * ranf_mt(0));
+				int k = (int)(((float)P.Nplace[j]) * ranf_mt(0));
 				for (int i2 = 0; (m < P.KeyWorkerPlaceNum[j]) && (i2 < Places[j][k].n); i2++)
 				{
 					int i = Places[j][k].members[i2];
@@ -533,14 +533,14 @@ void SetupModel(std::string const& density_file, std::string const& out_density_
 		{
 			for (int j = 0; j < vaccineCount; j++)
 			{
-				l = (int)(ranf() * ((double)vaccineCount));
+				l = (int)(ranf() * ((float)vaccineCount));
 				m = State.mvacc_queue[j];
 				State.mvacc_queue[j] = State.mvacc_queue[l];
 				State.mvacc_queue[l] = m;
 			}
 			for (int j = vaccineCount; j < State.n_mvacc; j++)
 			{
-				l = vaccineCount + ((int)(ranf() * ((double)(State.n_mvacc - vaccineCount))));
+				l = vaccineCount + ((int)(ranf() * ((float)(State.n_mvacc - vaccineCount))));
 				m = State.mvacc_queue[j];
 				State.mvacc_queue[j] = State.mvacc_queue[l];
 				State.mvacc_queue[l] = m;
@@ -551,11 +551,11 @@ void SetupModel(std::string const& density_file, std::string const& out_density_
 	PeakHeightSum = PeakHeightSS = PeakTimeSum = PeakTimeSS = 0;
 	int i = (P.ncw / 2) * P.nch + P.nch / 2;
 	int j = (P.ncw / 2 + 2) * P.nch + P.nch / 2;
-	fprintf(stderr, "UTM dist horiz=%lg %lg\n", sqrt(dist2_cc(Cells + i, Cells + j)), sqrt(dist2_cc(Cells + j, Cells + i)));
+	fprintf(stderr, "UTM dist horiz=%g %g\n", sqrt(dist2_cc(Cells + i, Cells + j)), sqrt(dist2_cc(Cells + j, Cells + i)));
 	j = (P.ncw / 2) * P.nch + P.nch / 2 + 2;
-	fprintf(stderr, "UTM dist vert=%lg %lg\n", sqrt(dist2_cc(Cells + i, Cells + j)), sqrt(dist2_cc(Cells + j, Cells + i)));
+	fprintf(stderr, "UTM dist vert=%g %g\n", sqrt(dist2_cc(Cells + i, Cells + j)), sqrt(dist2_cc(Cells + j, Cells + i)));
 	j = (P.ncw / 2 + 2) * P.nch + P.nch / 2 + 2;
-	fprintf(stderr, "UTM dist diag=%lg %lg\n", sqrt(dist2_cc(Cells + i, Cells + j)), sqrt(dist2_cc(Cells + j, Cells + i)));
+	fprintf(stderr, "UTM dist diag=%g %g\n", sqrt(dist2_cc(Cells + i, Cells + j)), sqrt(dist2_cc(Cells + j, Cells + i)));
 
 	//if(P.OutputBitmap)
 	//{
@@ -569,13 +569,13 @@ void ResetTimeSeries()
 {
 	TSMean = TSMeanE; TSVar = TSVarE;
 	///// This loops over index l twice just to reset the pointer TSMean from TSMeanE to TSMeanNE (same for TSVar).
-	int num_in_results = sizeof(Results) / sizeof(double);
+	int num_in_results = sizeof(Results) / sizeof(float);
 	for (int l = 0; l < 2; l++)
 	{
 		for (int i = 0; i < P.NumSamples; i++)
 		{
-			double* ts_mean = (double*)&TSMean[i];
-			double* ts_var = (double*)&TSVar[i];
+			float* ts_mean = (float*)&TSMean[i];
+			float* ts_var = (float*)&TSVar[i];
 			for (int j = 0; j < num_in_results; j++) ts_mean[j] = ts_var[j] = 0.0;
 		}
 		TSMean = TSMeanNE; TSVar = TSVarNE;
@@ -587,16 +587,16 @@ int ReadFitIter(std::string const& FitFile)
 {
 	FILE* dat;
 	int i,n,cl_index[100];
-	double cl,cl2;
+	float cl,cl2;
 
 	std::string fit_file_iter = FitFile + ".f" + std::to_string(P.FitIter) + ".txt";
 	P.clP[99] = -1; // CLP #99 reserved for fitting overdispersion in likelihood.
 	do
 	{
-		cl = ((double) clock()) / CLOCKS_PER_SEC;
+		cl = ((float) clock()) / CLOCKS_PER_SEC;
 		do
 		{
-			cl2 = ((double)clock()) / CLOCKS_PER_SEC;
+			cl2 = ((float)clock()) / CLOCKS_PER_SEC;
 		}
 		while ((cl2 > cl) && (cl2 < cl + 1.0));
 	} while (!(dat = fopen(fit_file_iter.c_str(), "r")));
@@ -608,7 +608,7 @@ int ReadFitIter(std::string const& FitFile)
 	if (n > 0)
 	{
 		for (i = 0; i < n; i++) fscanf(dat, "%i", &(cl_index[i]));
-		for (i = 0; i < n; i++) fscanf(dat, "%lg", &P.clP[cl_index[i]]);
+		for (i = 0; i < n; i++) fscanf(dat, "%g", &P.clP[cl_index[i]]);
 	}
 	fclose(dat);
 	return (n > 0) ? 0 : 1;
@@ -616,19 +616,19 @@ int ReadFitIter(std::string const& FitFile)
 
 void InitTransmissionCoeffs(void)
 {
-	double d, t, t2, t3, s, s2, s3, q;
+	float d, t, t2, t3, s, s2, s3, q;
 	int l, m;
 
 	t = s = t2 = 0;
 	for (int i = 0; i < MAX_HOUSEHOLD_SIZE; i++)
 	{
-		t += ((double)(i + 1)) * (P.HouseholdSizeDistrib[0][i] - t2);
+		t += ((float)(i + 1)) * (P.HouseholdSizeDistrib[0][i] - t2);
 		t2 = P.HouseholdSizeDistrib[0][i];
 	}
-	fprintf(stderr, "Household mean size=%lg\n", t);
+	fprintf(stderr, "Household mean size=%g\n", t);
 	t2 = s = 0;
 	s3 = 1.0;
-	double shd = 0.0;
+	float shd = 0.0;
 #pragma omp parallel for private(s2,q,l,d,m) schedule(static,1) reduction(+:s,t2,shd) default(none) shared(P, Households, Hosts)
 	for (int tn = 0; tn < P.NumThreads; tn++)
 	{
@@ -648,7 +648,7 @@ void InitTransmissionCoeffs(void)
 			else
 				Hosts[i].infectiousness *= (float)P.AsymptInfectiousness;
 			int j = (int)floor((q = ranf_mt(tn) * CDF_RES));
-			q -= ((double)j);
+			q -= ((float)j);
 			Hosts[i].recovery_or_death_time = (unsigned short int) floor(0.5 - (P.InfectiousPeriod * log(q * P.infectious_icdf[j + 1] + (1.0 - q) * P.infectious_icdf[j]) / P.TimeStep));
 
 			if (P.DoHouseholds)
@@ -662,13 +662,13 @@ void InitTransmissionCoeffs(void)
 				s2 *= P.TimeStep * P.HouseholdTrans * P.HouseholdDenomLookup[Households[Hosts[i].hh].nhr - 1];
 				d = 1.0; l = (int)Hosts[i].recovery_or_death_time;
 				for (int k = 0; k < l; k++) {
-					double y = 1.0 - s2 * P.infectiousness[k];
+					float y = 1.0 - s2 * P.infectiousness[k];
 					d *= ((y < 0) ? 0 : y);
 				}
 				l = Households[Hosts[i].hh].FirstPerson;
 				m = l + Households[Hosts[i].hh].nh;
 				for (int k = l; k < m; k++) if ((Hosts[k].inf == InfStat_Susceptible) && (k != i)) s += (1 - d) * P.AgeSusceptibility[HOST_AGE_GROUP(i)] * ((Hosts[k].care_home_resident) ? P.CareHomeResidentHouseholdScaling : 1.0);
-				shd += (double)(Households[Hosts[i].hh].nhr - 1);
+				shd += (float)(Households[Hosts[i].hh].nhr - 1);
 			}
 			q = (P.LatentToSymptDelay > Hosts[i].recovery_or_death_time * P.TimeStep) ? Hosts[i].recovery_or_death_time * P.TimeStep : P.LatentToSymptDelay;
 			// Care home residents less likely to infect via "spatial" contacts. This doesn't correct for non care home residents being less likely to infect care home residents,
@@ -682,16 +682,16 @@ void InitTransmissionCoeffs(void)
 			for (; k < l; k++) t2 += s2 * P.infectiousness[k];
 		}
 	}
-	t2 *= (s3 / ((double)P.PopSize));
-	fprintf(stderr, "Household SAR=%lg\n", s / shd);
-	s /= ((double)P.PopSize);
-	fprintf(stderr, "Household R0=%lg\n", P.R0household = s);
+	t2 *= (s3 / ((float)P.PopSize));
+	fprintf(stderr, "Household SAR=%g\n", s / shd);
+	s /= ((float)P.PopSize);
+	fprintf(stderr, "Household R0=%g\n", P.R0household = s);
 	t = 0;
 	if (P.DoPlaces)
 		for (int j = 0; j < P.PlaceTypeNum; j++)
 			if (j != P.HotelPlaceType)
 			{
-				double tpl = t;
+				float tpl = t;
 #pragma omp parallel for private(d,q,s2,s3,t3,l,m) schedule(static,1000) reduction(+:t) default(none) shared(P, Hosts, Places, j)
 				for (int i = 0; i < P.PopSize; i++)
 				{
@@ -700,45 +700,45 @@ void InitTransmissionCoeffs(void)
 					{
 						q = (P.LatentToSymptDelay > Hosts[i].recovery_or_death_time * P.TimeStep) ? Hosts[i].recovery_or_death_time * P.TimeStep : P.LatentToSymptDelay;
 						s2 = fabs(Hosts[i].infectiousness) * P.TimeStep * P.PlaceTypeTrans[j];
-						double x = s2 / P.PlaceTypeGroupSizeParam1[j];
+						float x = s2 / P.PlaceTypeGroupSizeParam1[j];
 						d = 1.0;
 						l = (int)(q / P.TimeStep);
 						for (m = 0; m < l; m++) {
-							double y = 1.0 - x * P.infectiousness[m];
+							float y = 1.0 - x * P.infectiousness[m];
 							d *= ((y < 0) ? 0 : y);
 						}
-						s3 = ((double)(Places[j][k].group_size[Hosts[i].PlaceGroupLinks[j]] - 1));
+						s3 = ((float)(Places[j][k].group_size[Hosts[i].PlaceGroupLinks[j]] - 1));
 						x *= (((Hosts[i].infectiousness < 0) && (!Hosts[i].care_home_resident)) ? (P.SymptPlaceTypeContactRate[j] * (1 - P.SymptPlaceTypeWithdrawalProp[j])) : 1);
 						l = (int)Hosts[i].recovery_or_death_time;
 						for (; m < l; m++) {
-							double y = 1.0 - x * P.infectiousness[m];
+							float y = 1.0 - x * P.infectiousness[m];
 							d *= ((y < 0) ? 0 : y);
 						}
 
 						t3 = d;
-						x = P.PlaceTypePropBetweenGroupLinks[j] * s2 / ((double)Places[j][k].n);
+						x = P.PlaceTypePropBetweenGroupLinks[j] * s2 / ((float)Places[j][k].n);
 						// use group structure to model multiple care homes with shared staff - in which case residents of one "group" don't mix with those in another, only staff do.
 						// calculation uses average proportion of care home "members" who are residents.
-						if (Hosts[i].care_home_resident) x *= (1.0 - P.CareHomePropResidents) + P.CareHomePropResidents * (P.CareHomeWorkerGroupScaling * (((double)Places[j][k].n - 1) - s3) + s3) / ((double)Places[j][k].n - 1);
+						if (Hosts[i].care_home_resident) x *= (1.0 - P.CareHomePropResidents) + P.CareHomePropResidents * (P.CareHomeWorkerGroupScaling * (((float)Places[j][k].n - 1) - s3) + s3) / ((float)Places[j][k].n - 1);
 						d = 1.0;
 						l = (int)(q / P.TimeStep);
 						for (m = 0; m < l; m++) {
-							double y = 1.0 - x * P.infectiousness[m];
+							float y = 1.0 - x * P.infectiousness[m];
 							d *= ((y < 0) ? 0 : y);
 						}
 						x *= (((Hosts[i].infectiousness < 0) && (!Hosts[i].care_home_resident)) ? (P.SymptPlaceTypeContactRate[j] * (1 - P.SymptPlaceTypeWithdrawalProp[j])) : 1);
 						l = (int)Hosts[i].recovery_or_death_time;
 						for (; m < l; m++) {
-							double y = 1.0 - x * P.infectiousness[m];
+							float y = 1.0 - x * P.infectiousness[m];
 							d *= ((y < 0) ? 0 : y);
 						}
-						t += (1 - t3 * d) * s3 + (1 - d) * (((double)(Places[j][k].n - 1)) - s3);
+						t += (1 - t3 * d) * s3 + (1 - d) * (((float)(Places[j][k].n - 1)) - s3);
 					}
 				}
-				fprintf(stderr, "%lg  ", (t-tpl) / ((double)P.PopSize));
+				fprintf(stderr, "%g  ", (t-tpl) / ((float)P.PopSize));
 			}
-	double recovery_time_days = 0;
-	double recovery_time_timesteps = 0;
+	float recovery_time_days = 0;
+	float recovery_time_timesteps = 0;
 #pragma omp parallel for schedule(static,500) reduction(+:recovery_time_days,recovery_time_timesteps) default(none) shared(P, Hosts)
 	for (int i = 0; i < P.PopSize; i++)
 	{
@@ -747,10 +747,10 @@ void InitTransmissionCoeffs(void)
 		Hosts[i].recovery_or_death_time = 0;
 	}
 
-	t /= ((double)P.PopSize);
-	recovery_time_days /= ((double)P.PopSize);
-	recovery_time_timesteps /= ((double)P.PopSize);
-	fprintf(stderr, "\nR0 for places = %lg\n", P.R0places = t);
+	t /= ((float)P.PopSize);
+	recovery_time_days /= ((float)P.PopSize);
+	recovery_time_timesteps /= ((float)P.PopSize);
+	fprintf(stderr, "\nR0 for places = %g\n", P.R0places = t);
 	if (!P.FixLocalBeta)
 	{
 		if (P.DoSI)
@@ -758,12 +758,12 @@ void InitTransmissionCoeffs(void)
 		else
 			P.LocalBeta = (P.R0 - s - t) / t2;
 		if (P.LocalBeta < 0) P.LocalBeta = 0;
-		fprintf(stderr, "Set spatial beta to %lg\n", P.LocalBeta);
+		fprintf(stderr, "Set spatial beta to %g\n", P.LocalBeta);
 	}
 	P.R0spatial = t2 * P.LocalBeta;
 	P.R0 = P.R0household + P.R0places + P.R0spatial;
-	fprintf(stderr, "R0 for random spatial = %lg\nOverall R0 = %lg\n", P.R0spatial, P.R0);
-	fprintf(stderr, "Mean infectious period (sampled) = %lg (%lg)\n", recovery_time_days, recovery_time_timesteps);
+	fprintf(stderr, "R0 for random spatial = %g\nOverall R0 = %g\n", P.R0spatial, P.R0);
+	fprintf(stderr, "Mean infectious period (sampled) = %g (%g)\n", recovery_time_days, recovery_time_timesteps);
 
 }
 
@@ -771,18 +771,18 @@ void SetupPopulation(std::string const& density_file, std::string const& out_den
 {
 	int j, l, m, i2, j2, last_i, mr, ad, country;
 	unsigned int rn, rn2;
-	double t, s, x, y, xh, yh, maxd, CumAgeDist[NUM_AGE_GROUPS + 1];
+	float t, s, x, y, xh, yh, maxd, CumAgeDist[NUM_AGE_GROUPS + 1];
 	char buf[4096], *col;
 	const char delimiters[] = " \t,";
 	FILE* dat = NULL, *dat2;
 	BinFile rec;
-	double *mcell_dens;
+	float *mcell_dens;
 	int *mcell_adunits, *mcell_num;
 
 	Cells = (Cell*)Memory::xcalloc(P.NC, sizeof(Cell));
 	Mcells = (Microcell*)Memory::xcalloc(P.NMC, sizeof(Microcell));
 	mcell_num = (int*)Memory::xcalloc(P.NMC, sizeof(int));
-	mcell_dens = (double*)Memory::xcalloc(P.NMC, sizeof(double));
+	mcell_dens = (float*)Memory::xcalloc(P.NMC, sizeof(float));
 	mcell_country = std::vector<uint16_t>(P.NMC, 1);
 	mcell_adunits = (int*)Memory::xcalloc(P.NMC, sizeof(int));
 
@@ -845,7 +845,7 @@ void SetupPopulation(std::string const& density_file, std::string const& out_den
 			{
 				k = 1;
 			}
-			if ((k) && P.SpatialBoundingBox.inside(Geometry::Vector2d(x, y)))
+			if ((k) && P.SpatialBoundingBox.inside(Geometry::Vector2f(x, y)))
 			{
 				j = (int)floor((x - P.SpatialBoundingBox.bottom_left().x) / P.in_microcells_.width  + 0.1);
 				k = (int)floor((y - P.SpatialBoundingBox.bottom_left().y) / P.in_microcells_.height + 0.1);
@@ -855,7 +855,7 @@ void SetupPopulation(std::string const& density_file, std::string const& out_den
 					mr++;
 					mcell_dens[l] += t;
 					mcell_country[l] = country;
-					//fprintf(stderr,"mcell %i, country %i, pop %lg\n",l,country,t);
+					//fprintf(stderr,"mcell %i, country %i, pop %g\n",l,country,t);
 					mcell_num[l]++;
 					if (P.DoAdUnits)
 					{
@@ -892,8 +892,8 @@ void SetupPopulation(std::string const& density_file, std::string const& out_den
 				for (l = 0; l < P.NMC; l++)
 					if (mcell_adunits[l] >= 0)
 					{
-						BF[rn].x = (double)(P.in_microcells_.width * (((double)(l / P.total_microcells_high_)) + 0.5)) + P.SpatialBoundingBox.bottom_left().x; //x
-						BF[rn].y = (double)(P.in_microcells_.height * (((double)(l % P.total_microcells_high_)) + 0.5)) + P.SpatialBoundingBox.bottom_left().y; //y
+						BF[rn].x = (float)(P.in_microcells_.width * (((float)(l / P.total_microcells_high_)) + 0.5)) + P.SpatialBoundingBox.bottom_left().x; //x
+						BF[rn].y = (float)(P.in_microcells_.height * (((float)(l % P.total_microcells_high_)) + 0.5)) + P.SpatialBoundingBox.bottom_left().y; //y
 						BF[rn].ad = (P.DoAdUnits) ? (AdUnits[mcell_adunits[l]].id) : 0;
 						BF[rn].pop = mcell_dens[l];
 						BF[rn].cnt = mcell_country[l];
@@ -919,7 +919,7 @@ void SetupPopulation(std::string const& density_file, std::string const& out_den
 		{
 			if (mcell_num[i] > 0)
 			{
-				mcell_dens[i] /= ((double)mcell_num[i]);
+				mcell_dens[i] /= ((float)mcell_num[i]);
 				if (P.DoAdUnits)
 					Mcells[i].adunit = mcell_adunits[i];
 				else
@@ -936,7 +936,7 @@ void SetupPopulation(std::string const& density_file, std::string const& out_den
 		{
 			mcell_dens[i] = 1.0;
 		}
-		maxd = ((double)P.NMC);
+		maxd = ((float)P.NMC);
 	}
 	if (!P.DoAdUnits) P.NumAdunits = 1;
 	if ((P.DoAdUnits) && !reg_demog_file.empty())
@@ -964,23 +964,23 @@ void SetupPopulation(std::string const& density_file, std::string const& out_den
 				if (l / P.AdunitLevel1Mask == AdUnits[k].id / P.AdunitLevel1Mask)
 				{
 					col = strtok(NULL, delimiters);
-					sscanf(col, "%lg", &x);
+					sscanf(col, "%g", &x);
 					P.PopByAdunit[k][1] += x;
 					t = 0;
 					for (int i = 0; i < NUM_AGE_GROUPS; i++)
 					{
 						col = strtok(NULL, delimiters);
-						sscanf(col, "%lg", &s);
+						sscanf(col, "%g", &s);
 						P.PropAgeGroup[k][i] += s;
 					}
 					col = strtok(NULL, delimiters);
 					if (P.DoHouseholds)
 					{
-						sscanf(col, "%lg", &y);
+						sscanf(col, "%g", &y);
 						for (int i = 0; i < MAX_HOUSEHOLD_SIZE; i++)
 						{
 							col = strtok(NULL, delimiters);
-							sscanf(col, "%lg", &s);
+							sscanf(col, "%g", &s);
 							P.HouseholdSizeDistrib[k][i] += y * s;
 						}
 					}
@@ -1000,9 +1000,9 @@ void SetupPopulation(std::string const& density_file, std::string const& out_den
 			}
 			for (int i = j = 0; i < 1000; i++)
 			{
-				t = ((double)i) / 1000;
+				t = ((float)i) / 1000;
 				while (t >= CumAgeDist[j + 1]) j++;
-				t = AGE_GROUP_WIDTH * (((double)j) + (t - CumAgeDist[j]) / (CumAgeDist[j + 1] - CumAgeDist[j]));
+				t = AGE_GROUP_WIDTH * (((float)j) + (t - CumAgeDist[j]) / (CumAgeDist[j + 1] - CumAgeDist[j]));
 				State.InvAgeDist[k][i] = (int)t;
 			}
 			State.InvAgeDist[k][1000 - 1] = NUM_AGE_GROUPS * AGE_GROUP_WIDTH - 1;
@@ -1032,9 +1032,9 @@ void SetupPopulation(std::string const& density_file, std::string const& out_den
 			CumAgeDist[i] = CumAgeDist[i - 1] + P.PropAgeGroup[0][i - 1];
 		for (int i = j = 0; i < 1000; i++)
 		{
-			t = ((double)i) / 1000;
+			t = ((float)i) / 1000;
 			if (t >= CumAgeDist[j + 1]) j++;
-			t = AGE_GROUP_WIDTH * (((double)j) + (t - CumAgeDist[j]) / (CumAgeDist[j + 1] - CumAgeDist[j]));
+			t = AGE_GROUP_WIDTH * (((float)j) + (t - CumAgeDist[j]) / (CumAgeDist[j + 1] - CumAgeDist[j]));
 			State.InvAgeDist[0][i] = (int)t;
 		}
 		State.InvAgeDist[0][1000 - 1] = NUM_AGE_GROUPS * AGE_GROUP_WIDTH - 1;
@@ -1044,7 +1044,7 @@ void SetupPopulation(std::string const& density_file, std::string const& out_den
 	if ((P.DoAdUnits) && !reg_demog_file.empty() && (P.DoCorrectAdunitPop))
 	{
 		for (int i = 0; i < P.NumAdunits; i++)
-			fprintf(stderr, "%i\t%i\t%lg\t%lg\n", i, (AdUnits[i].id % P.AdunitLevel1Mask) / P.AdunitLevel1Divisor, P.PropAgeGroup[i][0], P.HouseholdSizeDistrib[i][0]);
+			fprintf(stderr, "%i\t%i\t%g\t%g\n", i, (AdUnits[i].id % P.AdunitLevel1Mask) / P.AdunitLevel1Divisor, P.PropAgeGroup[i][0], P.HouseholdSizeDistrib[i][0]);
 		maxd = 0;
 		for (int i = 0; i < P.NMC; i++)
 		{
@@ -1192,8 +1192,8 @@ void SetupPopulation(std::string const& density_file, std::string const& out_den
 		for (j2 = tn; j2 < P.NMCP; j2 += P.NumThreads)
 		{
 			j = (int)(McellLookup[j2] - Mcells);
-			x = (double)(j / P.total_microcells_high_);
-			y = (double)(j % P.total_microcells_high_);
+			x = (float)(j / P.total_microcells_high_);
+			y = (float)(j % P.total_microcells_high_);
 			int i = Mcells[j].members[0];
 			if (j % 100 == 0)
 				fprintf(stderr_shared, "%i=%i (%i %i)            \r", j, Mcells[j].n, Mcells[j].adunit, (AdUnits[Mcells[j].adunit].id % P.AdunitLevel1Mask) / P.AdunitLevel1Divisor);
@@ -1221,15 +1221,15 @@ void SetupPopulation(std::string const& density_file, std::string const& out_den
 		}
 	if (P.DoCorrectAgeDist)
 	{
-		double** AgeDistAd, ** AgeDistCorrF, ** AgeDistCorrB;
-		AgeDistAd = (double**)Memory::xcalloc(MAX_ADUNITS, sizeof(double*));
-		AgeDistCorrF = (double**)Memory::xcalloc(MAX_ADUNITS, sizeof(double*));
-		AgeDistCorrB = (double**)Memory::xcalloc(MAX_ADUNITS, sizeof(double*));
+		float** AgeDistAd, ** AgeDistCorrF, ** AgeDistCorrB;
+		AgeDistAd = (float**)Memory::xcalloc(MAX_ADUNITS, sizeof(float*));
+		AgeDistCorrF = (float**)Memory::xcalloc(MAX_ADUNITS, sizeof(float*));
+		AgeDistCorrB = (float**)Memory::xcalloc(MAX_ADUNITS, sizeof(float*));
 		for (int i = 0; i < P.NumAdunits; i++)
 		{
-			AgeDistAd[i] = (double*)Memory::xcalloc((NUM_AGE_GROUPS + 1), sizeof(double));
-			AgeDistCorrF[i] = (double*)Memory::xcalloc((NUM_AGE_GROUPS + 1), sizeof(double));
-			AgeDistCorrB[i] = (double*)Memory::xcalloc((NUM_AGE_GROUPS + 1), sizeof(double));
+			AgeDistAd[i] = (float*)Memory::xcalloc((NUM_AGE_GROUPS + 1), sizeof(float));
+			AgeDistCorrF[i] = (float*)Memory::xcalloc((NUM_AGE_GROUPS + 1), sizeof(float));
+			AgeDistCorrB[i] = (float*)Memory::xcalloc((NUM_AGE_GROUPS + 1), sizeof(float));
 		}
 
 		// compute AgeDistAd[i][j] = total number of people in adunit i, age group j
@@ -1320,8 +1320,8 @@ void SetupPopulation(std::string const& density_file, std::string const& out_den
 		l = (int)(P.LocationInitialInfection[0][1] / P.in_microcells_.height);
 		j = k * P.total_microcells_high_ + l;
 
-		double rand_r = 0.0; //added these variables so that if initial infection location is empty we can search the 10km neighbourhood to find a suitable cell
-		double rand_theta = 0.0;
+		float rand_r = 0.0; //added these variables so that if initial infection location is empty we can search the 10km neighbourhood to find a suitable cell
+		float rand_theta = 0.0;
 		int counter = 0;
 		if (Mcells[j].n < P.NumInitialInfections[0])
 		{
@@ -1344,7 +1344,7 @@ void SetupPopulation(std::string const& density_file, std::string const& out_den
 			ERR_CRITICAL("Too few people in seed microcell to start epidemic with required number of initial infectionz.\n");
 	}
 	fprintf(stderr, "Checking cells...\n");
-	maxd = ((double)P.PopSize);
+	maxd = ((float)P.PopSize);
 	last_i = 0;
 	for (int i = 0; i < P.NMC; i++)
 		if (Mcells[i].n > 0) last_i = i;
@@ -1370,7 +1370,7 @@ void SetupPopulation(std::string const& density_file, std::string const& out_den
 		for(l=0;l<P.PlaceTypeNum;l++)
 			{
 			for(k=0;k<NUM_AGE_GROUPS*AGE_GROUP_WIDTH;k++)
-				fprintf(stderr, "%i:%lg ",k,PropPlaces[k][l]);
+				fprintf(stderr, "%i:%g ",k,PropPlaces[k][l]);
 			fprintf(stderr,"\n");
 			}
 	*/
@@ -1399,11 +1399,11 @@ void SetupPopulation(std::string const& density_file, std::string const& out_den
 		mr = 0;
 		while (!feof(dat))
 		{
-			fscanf(dat, "%lg %lg %i %i", &x, &y, &j, &m);
+			fscanf(dat, "%g %g %i %i", &x, &y, &j, &m);
 			for (int i = 0; i < P.PlaceTypeMaxAgeRead[j]; i++) fscanf(dat, "%hu", &(Places[j][P.Nplace[j]].AvailByAge[i]));
 			Places[j][P.Nplace[j]].loc.x = (float)(x - P.SpatialBoundingBox.bottom_left().x);
 			Places[j][P.Nplace[j]].loc.y = (float)(y - P.SpatialBoundingBox.bottom_left().y);
-			if (P.SpatialBoundingBox.inside(Geometry::Vector2d(x, y)))
+			if (P.SpatialBoundingBox.inside(Geometry::Vector2f(x, y)))
 			{
 				int i = P.nch * ((int)(Places[j][P.Nplace[j]].loc.x / P.in_cells_.width)) + ((int)(Places[j][P.Nplace[j]].loc.y / P.in_cells_.height));
 				if (Cells[i].n == 0) mr++;
@@ -1435,12 +1435,12 @@ void SetupPopulation(std::string const& density_file, std::string const& out_den
 			{
 				int k = Places[j][i].mcell;
 				Mcells[k].places[j][Mcells[k].np[j]++] = i;
-				s += (double)Places[j][i].n;
+				s += (float)Places[j][i].n;
 			}
-			fprintf(stderr, "School type %i: capacity=%lg demand=%lg\n", j, s, t);
+			fprintf(stderr, "School type %i: capacity=%g demand=%g\n", j, s, t);
 			t /= s;
 			for (int i = 0; i < P.Nplace[j]; i++)
-				Places[j][i].n = (int)ceil(((double)Places[j][i].n) * t);
+				Places[j][i].n = (int)ceil(((float)Places[j][i].n) * t);
 		}
 	}
 	if (P.DoPlaces)
@@ -1464,18 +1464,18 @@ void SetupPopulation(std::string const& density_file, std::string const& out_den
 				int k;
 				for (int i = m = k = 0; i < P.NMC; i++)
 				{
-					s = ((double) Mcells[i].n) / maxd / t;
+					s = ((float) Mcells[i].n) / maxd / t;
 					if (s > 1.0) s = 1.0;
 					if (i == last_i)
 						m += (Mcells[last_i].np[j2] = P.Nplace[j2] - m);
 					else
 						m += (Mcells[i].np[j2] = (int)ignbin_mt((int32_t)(P.Nplace[j2] - m), s, tn));
-					t -= ((double)Mcells[i].n) / maxd;
+					t -= ((float)Mcells[i].n) / maxd;
 					if (Mcells[i].np[j2] > 0)
 					{
 						Mcells[i].places[j2] = (int*)Memory::xcalloc(Mcells[i].np[j2], sizeof(int));
-						x = (double)(i / P.total_microcells_high_);
-						y = (double)(i % P.total_microcells_high_);
+						x = (float)(i / P.total_microcells_high_);
+						y = (float)(i % P.total_microcells_high_);
 						for (j = 0; j < Mcells[i].np[j2]; j++)
 						{
 							xh = P.in_microcells_.width * (ranf_mt(tn) + x);
@@ -1544,10 +1544,10 @@ void SetupPopulation(std::string const& density_file, std::string const& out_den
 	{
 		for (int i = 0; i < P.NumAdunits; i++)
 		{
-			AdUnits[i].origin_dest = (double*)Memory::xcalloc(MAX_ADUNITS, sizeof(double));
+			AdUnits[i].origin_dest = (float*)Memory::xcalloc(MAX_ADUNITS, sizeof(float));
 			for (j = 0; j < P.NumThreads; j++)
 			{
-				StateT[j].origin_dest[i] = (double*)Memory::xcalloc(MAX_ADUNITS, sizeof(double));
+				StateT[j].origin_dest[i] = (float*)Memory::xcalloc(MAX_ADUNITS, sizeof(float));
 			}
 			//initialise to zero
 			for (j = 0; j < P.NumAdunits; j++)
@@ -1570,7 +1570,7 @@ void SetupPopulation(std::string const& density_file, std::string const& out_den
 void SetupAirports(void)
 {
 	int k, l, m;
-	double x, y, t, tmin;
+	float x, y, t, tmin;
 	IndexList* base, *cur;
 
 	fprintf(stderr, "Assigning airports to microcells\n");
@@ -1598,8 +1598,8 @@ void SetupAirports(void)
 		if (Mcells[i].n > 0)
 		{
 			if (i % 10000 == 0) fprintf(stderr_shared, "\n%i           ", i);
-			x = (((double)(i / P.total_microcells_high_)) + 0.5) * P.in_microcells_.width;
-			y = (((double)(i % P.total_microcells_high_)) + 0.5) * P.in_microcells_.height;
+			x = (((float)(i / P.total_microcells_high_)) + 0.5) * P.in_microcells_.width;
+			y = (((float)(i % P.total_microcells_high_)) + 0.5) * P.in_microcells_.height;
 			k = l = 0;
 			tmin = 1e20;
 			for (int j = 0; j < P.Nairports; j++)
@@ -1673,7 +1673,7 @@ void SetupAirports(void)
 			if (Airports[i].num_mcell > 0) Airports[i].DestMcells[Airports[i].num_mcell - 1].prob = 1.0;
 			for (int j = l = 0; l <= 1024; l++)
 			{
-				t = ((double)l) / 1024.0;
+				t = ((float)l) / 1024.0;
 				while (Airports[i].DestMcells[j].prob < t) j++;
 				Airports[i].Inv_DestMcells[l] = j;
 			}
@@ -1708,7 +1708,7 @@ void SetupAirports(void)
 						Places[P.HotelPlaceType][j].loc.x, Places[P.HotelPlaceType][j].loc.y) < tmin)
 						Airports[i].num_place++;
 			} while (Airports[i].num_place < m);
-			if (tmin > MAX_DIST_AIRPORT_TO_HOTEL * MAX_DIST_AIRPORT_TO_HOTEL) fprintf(stderr_shared, "*** %i : %lg %i ***\n", i, sqrt(tmin), Airports[i].num_place);
+			if (tmin > MAX_DIST_AIRPORT_TO_HOTEL * MAX_DIST_AIRPORT_TO_HOTEL) fprintf(stderr_shared, "*** %i : %g %i ***\n", i, sqrt(tmin), Airports[i].num_place);
 			Airports[i].DestPlaces = (IndexList*)Memory::xcalloc(Airports[i].num_place, sizeof(IndexList));
 			Airports[i].num_place = 0;
 			for (int j = 0; j < P.Nplace[P.HotelPlaceType]; j++)
@@ -1730,7 +1730,7 @@ void SetupAirports(void)
 			if (Airports[i].num_place > 0) Airports[i].DestPlaces[Airports[i].num_place - 1].prob = 1.0;
 			for (int j = l = 0; l <= 1024; l++)
 			{
-				t = ((double)l) / 1024.0;
+				t = ((float)l) / 1024.0;
 				while (Airports[i].DestPlaces[j].prob < t) j++;
 				Airports[i].Inv_DestPlaces[l] = j;
 			}
@@ -1742,7 +1742,7 @@ void SetupAirports(void)
 	fprintf(stderr, "\nAirport initialisation completed successfully\n");
 }
 
-const double PROP_OTHER_PARENT_AWAY = 0.0;
+const float PROP_OTHER_PARENT_AWAY = 0.0;
 
 
 void AssignHouseholdAges(int n, int pers, int tn, bool do_adunit_demog)
@@ -1774,7 +1774,7 @@ void AssignHouseholdAges(int n, int pers, int tn, bool do_adunit_demog)
 					a[0] = State.InvAgeDist[ad][(int)(1000.0 * ranf_mt(tn))];
 				}
 				while ((a[0] < P.NoChildPersAge)
-					|| (ranf_mt(tn) > (((double)a[0]) - P.NoChildPersAge + 1) / (P.OldPersAge - P.NoChildPersAge + 1)));
+					|| (ranf_mt(tn) > (((float)a[0]) - P.NoChildPersAge + 1) / (P.OldPersAge - P.NoChildPersAge + 1)));
 			}
 			else if ((P.OnePersHouseProbYoung > 0) && (ranf_mt(tn) < P.OnePersHouseProbYoung / (1 - P.OnePersHouseProbOld)))
 			{
@@ -1782,7 +1782,7 @@ void AssignHouseholdAges(int n, int pers, int tn, bool do_adunit_demog)
 				{
 					a[0] = State.InvAgeDist[ad][(int)(1000.0 * ranf_mt(tn))];
 				} while ((a[0] > P.YoungAndSingle) || (a[0] < P.MinAdultAge)
-					|| (ranf_mt(tn) > 1 - P.YoungAndSingleSlope * (((double)a[0]) - P.MinAdultAge) / (P.YoungAndSingle - P.MinAdultAge)));
+					|| (ranf_mt(tn) > 1 - P.YoungAndSingleSlope * (((float)a[0]) - P.MinAdultAge) / (P.YoungAndSingle - P.MinAdultAge)));
 			}
 			else
 				while ((a[0] = State.InvAgeDist[ad][(int)(1000.0 * ranf_mt(tn))]) < P.MinAdultAge);
@@ -1796,13 +1796,13 @@ void AssignHouseholdAges(int n, int pers, int tn, bool do_adunit_demog)
 					a[0] = State.InvAgeDist[ad][(int)(1000.0 * ranf_mt(tn))];
 				}
 				while ((a[0] < P.NoChildPersAge)
-					|| (ranf_mt(tn) > (((double)a[0]) - P.NoChildPersAge + 1) / (P.OldPersAge - P.NoChildPersAge + 1)));
+					|| (ranf_mt(tn) > (((float)a[0]) - P.NoChildPersAge + 1) / (P.OldPersAge - P.NoChildPersAge + 1)));
 				do
 				{
 					a[1] = State.InvAgeDist[ad][(int)(1000.0 * ranf_mt(tn))];
 				}
 				while ((a[1] > a[0] + P.MaxMFPartnerAgeGap) || (a[1] < a[0] - P.MaxFMPartnerAgeGap) || (a[1] < P.NoChildPersAge)
-					|| (ranf_mt(tn) > (((double)a[1]) - P.NoChildPersAge + 1) / (P.OldPersAge - P.NoChildPersAge + 1)));
+					|| (ranf_mt(tn) > (((float)a[1]) - P.NoChildPersAge + 1) / (P.OldPersAge - P.NoChildPersAge + 1)));
 			}
 			else if (ranf_mt(tn) < P.OneChildTwoPersProb / (1 - P.TwoPersHouseProbOld))
 			{
@@ -1819,7 +1819,7 @@ void AssignHouseholdAges(int n, int pers, int tn, bool do_adunit_demog)
 				{
 					a[0] = State.InvAgeDist[ad][(int)(1000.0 * ranf_mt(tn))];
 				} while ((a[0] < P.MinAdultAge) || (a[0] > P.YoungAndSingle)
-					|| (ranf_mt(tn) > 1 - P.YoungAndSingleSlope * (((double)a[0]) - P.MinAdultAge) / (P.YoungAndSingle - P.MinAdultAge)));
+					|| (ranf_mt(tn) > 1 - P.YoungAndSingleSlope * (((float)a[0]) - P.MinAdultAge) / (P.YoungAndSingle - P.MinAdultAge)));
 				do
 				{
 					a[1] = State.InvAgeDist[ad][(int)(1000.0 * ranf_mt(tn))];
@@ -1876,7 +1876,7 @@ void AssignHouseholdAges(int n, int pers, int tn, bool do_adunit_demog)
 					a[0] = 0;
 					for (i = 1; i < nc; i++)
 						a[i] = a[i - 1] + 1 + ((int)ignpoi_mt(P.MeanChildAgeGap - 1, tn));
-					a[0] = State.InvAgeDist[ad][(int)(1000.0 * ranf_mt(tn))] - a[(int)(ranf_mt(tn) * ((double)nc))];
+					a[0] = State.InvAgeDist[ad][(int)(1000.0 * ranf_mt(tn))] - a[(int)(ranf_mt(tn) * ((float)nc))];
 					for (i = 1; i < nc; i++) a[i] += a[0];
 					k = (((nc == 1) && (ranf_mt(tn) < P.OneChildProbYoungestChildUnderFive)) || ((nc == 2) && (ranf_mt(tn) < P.TwoChildrenProbYoungestUnderFive))
 						|| ((nc > 2) && (ranf_mt(tn) < P.ProbYoungestChildUnderFive))) ? 5 : P.MaxChildAge;
@@ -1919,7 +1919,7 @@ void AssignPeopleToPlaces()
 	int i2, j, j2, k, k2, l, m, tp, f, f2, f3, f4, ic, a, cnt, ca, nt, nn;
 	int* PeopleArray;
 	int* NearestPlaces[MAX_NUM_THREADS];
-	double s, t, *NearestPlacesProb[MAX_NUM_THREADS];
+	float s, t, *NearestPlacesProb[MAX_NUM_THREADS];
 	Cell* ct;
 	int npt;
 
@@ -1985,7 +1985,7 @@ void AssignPeopleToPlaces()
 				// Use the Fisher–Yates shuffle algorithm to get a random permutation of PeopleArray
 				for (int index1 = cnt - 1; index1 > 0; index1--)
 				{
-					int index2 = (int)(((double)(index1 + 1)) * ranf());
+					int index2 = (int)(((float)(index1 + 1)) * ranf());
 					int tmp = PeopleArray[index1];
 					PeopleArray[index1] = PeopleArray[index2];
 					PeopleArray[index2] = tmp;
@@ -2037,8 +2037,8 @@ void AssignPeopleToPlaces()
 				}
 				if (tp < P.nsp)
 				{
-					t = ((double)m) / ((double)P.Nplace[tp]);
-					fprintf(stderr, "Adjusting place weights by cell (Capacity=%i Demand=%i  Av place size=%lg)\n", m, cnt, t);
+					t = ((float)m) / ((float)P.Nplace[tp]);
+					fprintf(stderr, "Adjusting place weights by cell (Capacity=%i Demand=%i  Av place size=%g)\n", m, cnt, t);
 					for (int i = 0; i < P.Nplace[tp]; i++)
 						if (Places[tp][i].treat_end_time > 0)
 						{
@@ -2100,33 +2100,33 @@ void AssignPeopleToPlaces()
 							k = j * P.nch + ((int)(Places[tp][i].loc.y / P.in_cells_.height));
 							if ((Cells[k].L > 0) && (Cells[k].R > 0))
 							{
-								s = ((double)Cells[k].L) / ((double)Cells[k].R);
+								s = ((float)Cells[k].L) / ((float)Cells[k].R);
 								Places[tp][i].treat_end_time = (unsigned short)ceil(Places[tp][i].treat_end_time * s);
 							}
 							m += ((int)Places[tp][i].treat_end_time);
 						}
 					for (int i = 0; i < P.NC; i++) Cells[i].L = Cells[i].I = Cells[i].R = 0;
 				}
-				t = ((double)m) / ((double)P.Nplace[tp]);
-				fprintf(stderr, "Adjusting place weights (Capacity=%i Demand=%i  Av place size=%lg)\n", m, cnt, t);
+				t = ((float)m) / ((float)P.Nplace[tp]);
+				fprintf(stderr, "Adjusting place weights (Capacity=%i Demand=%i  Av place size=%g)\n", m, cnt, t);
 				for (int i = m = 0; i < P.Nplace[tp]; i++)
 				{
-					s = ((double)Places[tp][i].treat_end_time) * 43 / 40 - 1;
+					s = ((float)Places[tp][i].treat_end_time) * 43 / 40 - 1;
 					m += (int)(Places[tp][i].treat_end_time = (unsigned short)(1.0 + ignpoi(s)));
 				}
 				if (tp < P.nsp)
-					s = ((double)cnt) * 1.075;
+					s = ((float)cnt) * 1.075;
 				else
-					s = ((double)cnt) * 1.125;
+					s = ((float)cnt) * 1.125;
 				j2 = ((int)s) - m;
 				for (int i = 0; i < j2; i++)
 				{
-					Places[tp][(int)(((double)P.Nplace[tp]) * ranf())].treat_end_time++;
+					Places[tp][(int)(((float)P.Nplace[tp]) * ranf())].treat_end_time++;
 				}
 				j2 = -j2;
 				for (int i = 0; i < j2; i++)
 				{
-					while (Places[tp][j = (int)(((double)P.Nplace[tp]) * ranf())].treat_end_time < 2);
+					while (Places[tp][j = (int)(((float)P.Nplace[tp]) * ranf())].treat_end_time < 2);
 					Places[tp][j].treat_end_time--;
 				}
 				if (P.PlaceTypeNearestNeighb[tp] == 0)
@@ -2160,7 +2160,7 @@ void AssignPeopleToPlaces()
 				for (int i = 0; i < P.NumThreads; i++)
 				{
 					NearestPlaces[i] = (int*)Memory::xcalloc(P.PlaceTypeNearestNeighb[tp] + CACHE_LINE_SIZE, sizeof(int));
-					NearestPlacesProb[i] = (double*)Memory::xcalloc(P.PlaceTypeNearestNeighb[tp] + CACHE_LINE_SIZE, sizeof(double));
+					NearestPlacesProb[i] = (float*)Memory::xcalloc(P.PlaceTypeNearestNeighb[tp] + CACHE_LINE_SIZE, sizeof(float));
 				}
 				P.Kernel.type_ = P.PlaceTypeKernelType[tp];
 				P.Kernel.scale_ = P.PlaceTypeKernelScale[tp];
@@ -2210,7 +2210,7 @@ void AssignPeopleToPlaces()
 											s = P.KernelLookup.num(t);
 											if (tp < P.nsp)
 											{
-												t = ((double)cur_place.treat_end_time);
+												t = ((float)cur_place.treat_end_time);
 												if (HOST_AGE_YEAR(i) < P.PlaceTypeMaxAgeRead[tp])
 												{
 													if ((t > 0) && (cur_place.AvailByAge[HOST_AGE_YEAR(i)] > 0))
@@ -2331,7 +2331,7 @@ void AssignPeopleToPlaces()
 										l = Cells[i].InvCDF[(int)floor(s * 1024)];
 										while (Cells[i].cum_trans[l] < s) l++;
 										ct = CellLookup[l];
-										m = (int)(ranf_mt(tn) * ((double)ct->S));
+										m = (int)(ranf_mt(tn) * ((float)ct->S));
 										j = -1;
 										if (ct->susceptible[m] >= 0)
 											if ((f3) || (Places[tp][ct->susceptible[m]].AvailByAge[HOST_AGE_YEAR(k)] > 0))
@@ -2346,7 +2346,7 @@ void AssignPeopleToPlaces()
 										ERR_CRITICAL("Out of bounds place link\n");
 									}
 									t = dist2_raw(Households[Hosts[k].hh].loc.x, Households[Hosts[k].hh].loc.y, Places[tp][j].loc.x, Places[tp][j].loc.y);
-									s = ((double)ct->S) / ((double)ct->S0) * P.KernelLookup.num(t) / Cells[i].max_trans[l];
+									s = ((float)ct->S) / ((float)ct->S0) * P.KernelLookup.num(t) / Cells[i].max_trans[l];
 									if ((P.DoAdUnits) && (P.InhibitInterAdunitPlaceAssignment[tp] > 0))
 									{
 										if (Mcells[Hosts[k].mcell].adunit != Mcells[Places[tp][j].mcell].adunit) s *= (1 - P.InhibitInterAdunitPlaceAssignment[tp]);
@@ -2448,7 +2448,7 @@ void StratifyPlaces(void)
 					for (int i = 0; i < P.Nplace[j]; i++)
 						if (Places[j][i].n > 0)
 						{
-							double t = ((double)Places[j][i].n) / P.PlaceTypeGroupSizeParam1[j] - 1.0;
+							float t = ((float)Places[j][i].n) / P.PlaceTypeGroupSizeParam1[j] - 1.0;
 							if (t < 0)
 								Places[j][i].ng = 1;
 							else
@@ -2459,7 +2459,7 @@ void StratifyPlaces(void)
 							int l;
 							for (int k = l = 0; k < Places[j][i].ng; k++)
 							{
-								t = 1 / ((double)(Places[j][i].ng - k));
+								t = 1 / ((float)(Places[j][i].ng - k));
 								Places[j][i].group_start[k] = l;
 								Places[j][i].group_size[k] = 1 + ignbin_mt((int32_t)m, t, tn);
 								m -= (Places[j][i].group_size[k] - 1);
@@ -2467,7 +2467,7 @@ void StratifyPlaces(void)
 							}
 							for (int k = 0; k < Places[j][i].n; k++)
 							{
-								l = (int)(((double)Places[j][i].n) * ranf_mt(tn));
+								l = (int)(((float)Places[j][i].n) * ranf_mt(tn));
 								int n = Places[j][i].members[l];
 								Places[j][i].members[l] = Places[j][i].members[k];
 								Places[j][i].members[k] = n;
@@ -2512,19 +2512,19 @@ void StratifyPlaces(void)
 						if(Places[j][i].ng>0)
 							{
 							for(k=0;k<Places[j][i].ng;k++)
-								t+=(double) Places[j][i].group_size[k];
-							s+=(double) Places[j][i].ng;
+								t+=(float) Places[j][i].group_size[k];
+							s+=(float) Places[j][i].ng;
 							}
 					s2+=s;
 					t2+=t;
-					fprintf(stderr,"Mean group size for place type %i = %lg\n",j,t/s);
+					fprintf(stderr,"Mean group size for place type %i = %g\n",j,t/s);
 					}
 				t=0;
 				for(i=0;i<P.PopSize;i++)
 					for(j=0;j<P.PlaceTypeNum;j++)
 						if(Hosts[i].PlaceLinks[j]>=0)
-							t+=(double) Places[j][Hosts[i].PlaceLinks[j]].group_size[Hosts[i].PlaceGroupLinks[j]];
-				fprintf(stderr,"Overall mean group size = %lg (%lg)\n",t/((double) P.PopSize),t2/s2);
+							t+=(float) Places[j][Hosts[i].PlaceLinks[j]].group_size[Hosts[i].PlaceGroupLinks[j]];
+				fprintf(stderr,"Overall mean group size = %g (%g)\n",t/((float) P.PopSize),t2/s2);
 		*/
 	}
 }
@@ -2637,7 +2637,7 @@ void SaveAgeDistrib(std::string const& output_file_base)
 			fprintf(dat, "%i\ta%.10f\t%.10f\n", i, AgeDist[i], AgeDist2[i]);
 		fprintf(dat, "\np\tlife_expec\tage\n");
 		for (i = 0; i <= 1000; i++)
-			fprintf(dat, "%.10f\t%.10f\t%i\n", ((double)i) / 1000, P.InvLifeExpecDist[0][i], State.InvAgeDist[0][i]);
+			fprintf(dat, "%.10f\t%.10f\t%i\n", ((float)i) / 1000, P.InvLifeExpecDist[0][i], State.InvAgeDist[0][i]);
 	}
 	else
 	{

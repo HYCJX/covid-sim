@@ -33,9 +33,9 @@ void parse_string(std::string const& input, std::string& output);
 void parse_integer(std::string const& input, int& output);
 
 /**
- * Parses and checks if the input string is an double.
+ * Parses and checks if the input string is an float.
  */
-void parse_double(std::string const& input, double& output);
+void parse_float(std::string const& input, float& output);
 
 class CmdLineArgs {
 public:
@@ -53,13 +53,13 @@ public:
 	void add_custom_option(std::string const& option, ParserFn func, std::string const& doc);
 
 	/**
-	 * Use this function when adding a new double option to the CLI.
+	 * Use this function when adding a new float option to the CLI.
 	 *
-	 * This will bind the output variable to the parse_double() function and
+	 * This will bind the output variable to the parse_float() function and
 	 * gets inserted into a map of other options. This provides a strong cohesion
 	 * between an option name (i.e. 'R') with its variable (i.e. 'P.R0scale')
 	 */
-	void add_double_option(std::string const& option, double& output, std::string const& doc);
+	void add_float_option(std::string const& option, float& output, std::string const& doc);
 
 	/**
 	 * Use this function when adding a new integral option to the CLI.

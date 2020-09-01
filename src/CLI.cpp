@@ -60,7 +60,7 @@ void parse_integer(std::string const& input, int& output)
 	}
 }
 
-void parse_double(std::string const& input, double& output)
+void parse_float(std::string const& input, float& output)
 {
 	try
 	{
@@ -68,17 +68,17 @@ void parse_double(std::string const& input, double& output)
 		output = std::stod(input, &pos);
 		if (pos != input.size())
 		{
-			ERR_CRITICAL_FMT("Detected invalid characters after parsed double: %s\n", input.c_str());
+			ERR_CRITICAL_FMT("Detected invalid characters after parsed float: %s\n", input.c_str());
 		}
 	}
 	catch (const std::invalid_argument& e)
 	{
-		ERR_CRITICAL_FMT("EINVAL: Expected double got %s\n", input.c_str());
+		ERR_CRITICAL_FMT("EINVAL: Expected float got %s\n", input.c_str());
 	}
 	catch (const std::out_of_range& e)
 	{
 		ERR_CRITICAL_FMT("ERANGE: Input integer is out of range. Expected %.4e to %.4e. Got %s\n",
-						std::numeric_limits<double>::min(), std::numeric_limits<double>::max(), input.c_str());
+						std::numeric_limits<float>::min(), std::numeric_limits<float>::max(), input.c_str());
 	}
 }
 
@@ -92,9 +92,9 @@ void CmdLineArgs::add_custom_option(std::string const& option, ParserFn func, st
 	doc_map_.emplace(option, doc);
 }
 
-void CmdLineArgs::add_double_option(std::string const& option, double& output, std::string const& doc)
+void CmdLineArgs::add_float_option(std::string const& option, float& output, std::string const& doc)
 {
-	add_custom_option(option, std::bind(parse_double, std::placeholders::_1, std::ref(output)), doc);
+	add_custom_option(option, std::bind(parse_float, std::placeholders::_1, std::ref(output)), doc);
 }
 
 void CmdLineArgs::add_integer_option(std::string const& option, int& output, std::string const& doc)

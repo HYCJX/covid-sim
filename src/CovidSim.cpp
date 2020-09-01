@@ -51,7 +51,7 @@ void ReadInterventions(std::string const&);
 int GetXMLNode(FILE*, const char*, const char*, char*, int);
 void ReadAirTravel(std::string const&, std::string const&);
 void InitModel(int); //adding run number as a parameter for event log: ggilani - 15/10/2014
-void SeedInfection(double, int*, int, int); //adding run number as a parameter for event log: ggilani - 15/10/2014
+void SeedInfection(float, int*, int, int); //adding run number as a parameter for event log: ggilani - 15/10/2014
 int RunModel(int, std::string const&, std::string const&, std::string const&);
 
 void SaveDistribs(std::string const&);
@@ -64,8 +64,8 @@ void LoadSnapshot(std::string const&);
 void SaveSnapshot(std::string const&);
 void RecordInfTypes(void);
 
-void RecordSample(double, int, std::string const&);
-void CalibrationThresholdCheck(double, int);
+void RecordSample(float, int, std::string const&);
+void CalibrationThresholdCheck(float, int);
 void CalcLikelihood(int, std::string const&, std::string const&);
 void CalcOriginDestMatrix_adunit(void); //added function to calculate origin destination matrix: ggilani 28/01/15
 
@@ -99,14 +99,14 @@ BitmapHeader* bmh;
 Events* InfEventLog;
 int nEvents;
 
-double inftype[INFECT_TYPE_MASK], inftype_av[INFECT_TYPE_MASK], infcountry[MAX_COUNTRIES], infcountry_av[MAX_COUNTRIES], infcountry_num[MAX_COUNTRIES];
-double indivR0[MAX_SEC_REC][MAX_GEN_REC], indivR0_av[MAX_SEC_REC][MAX_GEN_REC];
-double inf_household[MAX_HOUSEHOLD_SIZE + 1][MAX_HOUSEHOLD_SIZE + 1], denom_household[MAX_HOUSEHOLD_SIZE + 1];
-double inf_household_av[MAX_HOUSEHOLD_SIZE + 1][MAX_HOUSEHOLD_SIZE + 1], AgeDist[NUM_AGE_GROUPS], AgeDist2[NUM_AGE_GROUPS];
-double case_household[MAX_HOUSEHOLD_SIZE + 1][MAX_HOUSEHOLD_SIZE + 1], case_household_av[MAX_HOUSEHOLD_SIZE + 1][MAX_HOUSEHOLD_SIZE + 1];
-double PropPlaces[NUM_AGE_GROUPS * AGE_GROUP_WIDTH][NUM_PLACE_TYPES];
-double PropPlacesC[NUM_AGE_GROUPS * AGE_GROUP_WIDTH][NUM_PLACE_TYPES], AirTravelDist[MAX_DIST];
-double PeakHeightSum, PeakHeightSS, PeakTimeSum, PeakTimeSS;
+float inftype[INFECT_TYPE_MASK], inftype_av[INFECT_TYPE_MASK], infcountry[MAX_COUNTRIES], infcountry_av[MAX_COUNTRIES], infcountry_num[MAX_COUNTRIES];
+float indivR0[MAX_SEC_REC][MAX_GEN_REC], indivR0_av[MAX_SEC_REC][MAX_GEN_REC];
+float inf_household[MAX_HOUSEHOLD_SIZE + 1][MAX_HOUSEHOLD_SIZE + 1], denom_household[MAX_HOUSEHOLD_SIZE + 1];
+float inf_household_av[MAX_HOUSEHOLD_SIZE + 1][MAX_HOUSEHOLD_SIZE + 1], AgeDist[NUM_AGE_GROUPS], AgeDist2[NUM_AGE_GROUPS];
+float case_household[MAX_HOUSEHOLD_SIZE + 1][MAX_HOUSEHOLD_SIZE + 1], case_household_av[MAX_HOUSEHOLD_SIZE + 1][MAX_HOUSEHOLD_SIZE + 1];
+float PropPlaces[NUM_AGE_GROUPS * AGE_GROUP_WIDTH][NUM_PLACE_TYPES];
+float PropPlacesC[NUM_AGE_GROUPS * AGE_GROUP_WIDTH][NUM_PLACE_TYPES], AirTravelDist[MAX_DIST];
+float PeakHeightSum, PeakHeightSS, PeakTimeSum, PeakTimeSS;
 
 // These allow up to about 2 billion people per pixel, which should be ample.
 int32_t *bmPopulation; // The population in each bitmap pixel. Special value -1 means "country boundary"
@@ -121,10 +121,10 @@ int PlaceDistDistrib[NUM_PLACE_TYPES][MAX_DIST], PlaceSizeDistrib[NUM_PLACE_TYPE
 const int MAXINTFILE = 10;
 std::vector<std::string> InterventionFiles;
 
-// default start value for icdf double arrays (was hardcoded as 100)
-const double ICDF_START = 100.0;
+// default start value for icdf float arrays (was hardcoded as 100)
+const float ICDF_START = 100.0;
 
-void GetInverseCdf(FILE* param_file_dat, FILE* preparam_file_dat, const char* icdf_name, InverseCdf* inverseCdf, double start_value = ICDF_START);
+void GetInverseCdf(FILE* param_file_dat, FILE* preparam_file_dat, const char* icdf_name, InverseCdf* inverseCdf, float start_value = ICDF_START);
 
 int main(int argc, char* argv[])
 {
@@ -148,7 +148,7 @@ int main(int argc, char* argv[])
 							"timestep interval when a snapshot should be saved and <S> is the "
 							"filename in which to save the snapshot");
 		}
-		parse_double(input.substr(0, sep), P.SnapshotSaveTime);
+		parse_float(input.substr(0, sep), P.SnapshotSaveTime);
 		parse_read_file(input.substr(sep + 1), snapshot_save_file);
 	};
 
@@ -186,10 +186,10 @@ int main(int argc, char* argv[])
 	for (int i = 0; i <= 99; i++) {
 		std::string param = "CLP" + std::to_string(i);
 		std::string description = "Overwrites #" + std::to_string(i) + " wildcard in parameter file";
-		args.add_double_option(param, P.clP[i], description);
+		args.add_float_option(param, P.clP[i], description);
 		if (i < 10) {
 			param = "CLP0" + std::to_string(i);
-			args.add_double_option(param, P.clP[i], description);
+			args.add_float_option(param, P.clP[i], description);
 		}
 	}
 
@@ -202,8 +202,8 @@ int main(int argc, char* argv[])
 	// added Kernel Power and Offset scaling so that it can easily
 	// be altered from the command line in order to vary the kernel
 	// quickly: ggilani - 15/10/14
-	args.add_double_option("KO", P.KernelOffsetScale, "Scales the P.KernelOffsetScale parameter");
-	args.add_double_option("KP", P.KernelPowerScale, "Scales the P.KernelPowerScale parameter");
+	args.add_float_option("KO", P.KernelOffsetScale, "Scales the P.KernelOffsetScale parameter");
+	args.add_float_option("KP", P.KernelPowerScale, "Scales the P.KernelPowerScale parameter");
 	args.add_string_option("L", parse_read_file, load_network_file, "Network file to load");
 	args.add_string_option("LS", parse_read_file, snapshot_load_file, "Snapshot file to load");
 	args.add_string_option("M", parse_write_dir, out_density_file, "Output density file");
@@ -211,10 +211,10 @@ int main(int argc, char* argv[])
 	args.add_string_option("O", parse_string, output_file_base, "Output file path prefix");
 	args.add_string_option("P", parse_read_file, param_file, "Parameter file");
 	args.add_string_option("PP", parse_read_file, pre_param_file, "Pre-Parameter file");
-	args.add_double_option("R", P.R0scale, "R0 scaling");
+	args.add_float_option("R", P.R0scale, "R0 scaling");
 	args.add_string_option("s", parse_read_file, school_file, "School file");
 	args.add_string_option("S", parse_write_dir, save_network_file, "Network file to save");
-	args.add_custom_option("SS", parse_snapshot_save_option, "Interval and file to save snapshots [double,string]");
+	args.add_custom_option("SS", parse_snapshot_save_option, "Interval and file to save snapshots [float,string]");
 	args.add_integer_option("T", P.CaseOrDeathThresholdBeforeAlert_CommandLine, "Sets the P.CaseOrDeathThresholdBeforeAlert parameter");
 	args.parse(argc, argv, P);
 
@@ -234,7 +234,7 @@ int main(int argc, char* argv[])
 
 	std::cerr << "Param=" << param_file << "\nOut=" << output_file_base << "\nDens=" << density_file << std::endl;
 	fprintf(stderr, "Bitmap Format = *.%s\n", P.BitmapFormat == BitmapFormats::PNG ? "png" : "bmp");
-	fprintf(stderr, "sizeof(int)=%i sizeof(long)=%i sizeof(float)=%i sizeof(double)=%i sizeof(unsigned short int)=%i sizeof(int *)=%i\n", (int)sizeof(int), (int)sizeof(long), (int)sizeof(float), (int)sizeof(double), (int)sizeof(unsigned short int), (int)sizeof(int*));
+	fprintf(stderr, "sizeof(int)=%i sizeof(long)=%i sizeof(float)=%i sizeof(float)=%i sizeof(unsigned short int)=%i sizeof(int *)=%i\n", (int)sizeof(int), (int)sizeof(long), (int)sizeof(float), (int)sizeof(float), (int)sizeof(unsigned short int), (int)sizeof(int*));
 
 	//// **** //// **** //// **** //// **** //// **** //// **** //// **** //// **** //// **** //// **** //// **** //// **** //// **** //// ****
 	//// **** SET UP OMP / THREADS
@@ -255,7 +255,7 @@ int main(int argc, char* argv[])
 	{
 		fprintf(stderr, "Thread %i initialised\n", omp_get_thread_num());
 	}
-	/* fprintf(stderr,"int=%i\tfloat=%i\tdouble=%i\tint *=%i\n",(int) sizeof(int),(int) sizeof(float),(int) sizeof(double),(int) sizeof(int *));	*/
+	/* fprintf(stderr,"int=%i\tfloat=%i\tfloat=%i\tint *=%i\n",(int) sizeof(int),(int) sizeof(float),(int) sizeof(float),(int) sizeof(int *));	*/
 #else
 	P.NumThreads = 1;
 #endif
@@ -293,7 +293,7 @@ int main(int argc, char* argv[])
 	total_time = 0;
 	turn = 0;
 
-	fprintf(stderr, "Model setup in %lf seconds\n", ((double)(clock() - cl)) / CLOCKS_PER_SEC);
+	fprintf(stderr, "Model setup in %f seconds\n", ((float)(clock() - cl)) / CLOCKS_PER_SEC);
 
 
 
@@ -337,7 +337,7 @@ int main(int argc, char* argv[])
 				if (P.NumRealisations > 1)
 				{
 					output_file = output_file_base + "." + std::to_string(i);
-					fprintf(stderr, "Realisation %i of %i  (time=%lf nr_ne=%i)\n", i + 1, P.NumRealisations, ((double)(clock() - cl)) / CLOCKS_PER_SEC, P.NRactNE);
+					fprintf(stderr, "Realisation %i of %i  (time=%f nr_ne=%i)\n", i + 1, P.NumRealisations, ((float)(clock() - cl)) / CLOCKS_PER_SEC, P.NRactNE);
 				}
 				///// Set and save seeds
 				if (((i == 0) && (P.FitIter == 1)) || (P.ResetSeeds && P.KeepSameSeeds))
@@ -417,10 +417,10 @@ int main(int argc, char* argv[])
 			// Print Infect Sweep time information:
 			fprintf(stderr, "\nInfectSweep is called %d times.\n", turn);
 			fprintf(stderr, "\nTotal time of running InfectSweep: %f.\n", total_time);
-			fprintf(stderr, "\nAverage time of running InfectSweep: %f.\n", total_time / (double) turn);
+			fprintf(stderr, "\nAverage time of running InfectSweep: %f.\n", total_time / (float) turn);
 
 			fprintf(stderr, "Extinction in %i out of %i runs\n", P.NRactE, P.NRactNE + P.NRactE);
-			fprintf(stderr, "Model ran in %lf seconds\n", ((double)(clock() - cl)) / CLOCKS_PER_SEC);
+			fprintf(stderr, "Model ran in %f seconds\n", ((float)(clock() - cl)) / CLOCKS_PER_SEC);
 			fprintf(stderr, "Model finished\n");
 		}
 	}
@@ -456,7 +456,7 @@ void parse_intervention_file_option(std::string const& input) {
 void ReadParams(std::string const& ParamFile, std::string const& PreParamFile, std::string const& AdUnitFile)
 {
 	FILE* ParamFile_dat, * PreParamFile_dat, * AdminFile_dat;
-	double s, t, AgeSuscScale;
+	float s, t, AgeSuscScale;
 	int i, j, j1, j2, k, f, nc, na;
 	char CountryNameBuf[128 * MAX_COUNTRIES], AdunitListNamesBuf[128 * MAX_ADUNITS];
 	char* CountryNames[MAX_COUNTRIES], * AdunitListNames[MAX_ADUNITS];
@@ -477,18 +477,18 @@ void ReadParams(std::string const& ParamFile, std::string const& PreParamFile, s
 			AdunitListNames[i][0] = 0;
 		}
 		for (i = 0; i < 100; i++) P.clP_copies[i] = 0;
-		if (!GetInputParameter2(ParamFile_dat, AdminFile_dat, "Longitude cut line", "%lf", (void*)&(P.LongitudeCutLine), 1, 1, 0)) {
+		if (!GetInputParameter2(ParamFile_dat, AdminFile_dat, "Longitude cut line", "%f", (void*)&(P.LongitudeCutLine), 1, 1, 0)) {
 			P.LongitudeCutLine = -360.0;
 		}
-		GetInputParameter(ParamFile_dat, PreParamFile_dat, "Update timestep", "%lf", (void*)&(P.TimeStep), 1, 1, 0);
-		GetInputParameter(ParamFile_dat, PreParamFile_dat, "Sampling timestep", "%lf", (void*)&(P.SampleStep), 1, 1, 0);
+		GetInputParameter(ParamFile_dat, PreParamFile_dat, "Update timestep", "%f", (void*)&(P.TimeStep), 1, 1, 0);
+		GetInputParameter(ParamFile_dat, PreParamFile_dat, "Sampling timestep", "%f", (void*)&(P.SampleStep), 1, 1, 0);
 		if (P.TimeStep > P.SampleStep) ERR_CRITICAL("Update step must be smaller than sampling step\n");
 		t = ceil(P.SampleStep / P.TimeStep - 1e-6);
 		P.UpdatesPerSample = (int)t;
 		P.TimeStep = P.SampleStep / t;
 		P.TimeStepsPerDay = ceil(1.0 / P.TimeStep - 1e-6);
-		fprintf(stderr, "Update step = %lf\nSampling step = %lf\nUpdates per sample=%i\nTimeStepsPerDay=%lf\n", P.TimeStep, P.SampleStep, P.UpdatesPerSample, P.TimeStepsPerDay);
-		GetInputParameter(ParamFile_dat, PreParamFile_dat, "Sampling time", "%lf", (void*)&(P.SampleTime), 1, 1, 0);
+		fprintf(stderr, "Update step = %f\nSampling step = %f\nUpdates per sample=%i\nTimeStepsPerDay=%f\n", P.TimeStep, P.SampleStep, P.UpdatesPerSample, P.TimeStepsPerDay);
+		GetInputParameter(ParamFile_dat, PreParamFile_dat, "Sampling time", "%f", (void*)&(P.SampleTime), 1, 1, 0);
 		P.NumSamples = 1 + (int)ceil(P.SampleTime / P.SampleStep);
 		GetInputParameter(PreParamFile_dat, AdminFile_dat, "Population size", "%i", (void*)&(P.PopSize), 1, 1, 0);
 		if (P.NumRealisations == 0)
@@ -544,9 +544,9 @@ void ReadParams(std::string const& ParamFile, std::string const& PreParamFile, s
 
 	if (P.DoHouseholds)
 	{
-		GetInputParameter(PreParamFile_dat, AdminFile_dat, "Household size distribution", "%lf", (void*)P.HouseholdSizeDistrib[0], MAX_HOUSEHOLD_SIZE, 1, 0);
-		GetInputParameter(ParamFile_dat, PreParamFile_dat, "Household attack rate", "%lf", (void*)&(P.HouseholdTrans), 1, 1, 0);
-		GetInputParameter(ParamFile_dat, PreParamFile_dat, "Household transmission denominator power", "%lf", (void*)&(P.HouseholdTransPow), 1, 1, 0);
+		GetInputParameter(PreParamFile_dat, AdminFile_dat, "Household size distribution", "%f", (void*)P.HouseholdSizeDistrib[0], MAX_HOUSEHOLD_SIZE, 1, 0);
+		GetInputParameter(ParamFile_dat, PreParamFile_dat, "Household attack rate", "%f", (void*)&(P.HouseholdTrans), 1, 1, 0);
+		GetInputParameter(ParamFile_dat, PreParamFile_dat, "Household transmission denominator power", "%f", (void*)&(P.HouseholdTransPow), 1, 1, 0);
 		if (!GetInputParameter2(PreParamFile_dat, AdminFile_dat, "Correct age distribution after household allocation to exactly match specified demography", "%i", (void*)&(P.DoCorrectAgeDist), 1, 1, 0)) P.DoCorrectAgeDist = 0;
 	}
 	else
@@ -563,7 +563,7 @@ void ReadParams(std::string const& ParamFile, std::string const& PreParamFile, s
 			P.HouseholdSizeDistrib[0][i] = P.HouseholdSizeDistrib[0][i] + P.HouseholdSizeDistrib[0][i - 1];
 		P.HouseholdDenomLookup[0] = 1.0;
 		for (i = 1; i < MAX_HOUSEHOLD_SIZE; i++)
-		    P.HouseholdDenomLookup[i] = 1 / pow(((double)(i + 1)), P.HouseholdTransPow);
+		    P.HouseholdDenomLookup[i] = 1 / pow(((float)(i + 1)), P.HouseholdTransPow);
 		if (!GetInputParameter2(PreParamFile_dat, AdminFile_dat, "Include administrative units within countries", "%i", (void*)&(P.DoAdUnits), 1, 1, 0)) P.DoAdUnits = 1;
 		if (!GetInputParameter2(PreParamFile_dat, AdminFile_dat, "Divisor for countries", "%i", (void*)&(P.CountryDivisor), 1, 1, 0)) P.CountryDivisor = 1;
 		if (P.DoAdUnits)
@@ -677,19 +677,19 @@ void ReadParams(std::string const& ParamFile, std::string const& PreParamFile, s
 		}
 		else
 			P.DoWholeHouseholdImmunity = 0;
-		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Initial immunity profile by age", "%lf", (void*)P.InitialImmunity, NUM_AGE_GROUPS, 1, 0))
+		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Initial immunity profile by age", "%f", (void*)P.InitialImmunity, NUM_AGE_GROUPS, 1, 0))
 			for (i = 0; i < NUM_AGE_GROUPS; i++)
 				P.InitialImmunity[i] = 0;
-		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Relative spatial contact rates by age", "%lf", (void*)P.RelativeSpatialContact, NUM_AGE_GROUPS, 1, 0))
+		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Relative spatial contact rates by age", "%f", (void*)P.RelativeSpatialContact, NUM_AGE_GROUPS, 1, 0))
 			for (i = 0; i < NUM_AGE_GROUPS; i++)
 				P.RelativeSpatialContact[i] = 1;
-		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Age-dependent infectiousness", "%lf", (void*)P.AgeInfectiousness, NUM_AGE_GROUPS, 1, 0))
+		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Age-dependent infectiousness", "%f", (void*)P.AgeInfectiousness, NUM_AGE_GROUPS, 1, 0))
 			for (i = 0; i < NUM_AGE_GROUPS; i++)
 				P.AgeInfectiousness[i] = 1.0;
-		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Age-dependent susceptibility", "%lf", (void*)P.AgeSusceptibility, NUM_AGE_GROUPS, 1, 0))
+		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Age-dependent susceptibility", "%f", (void*)P.AgeSusceptibility, NUM_AGE_GROUPS, 1, 0))
 			for (i = 0; i < NUM_AGE_GROUPS; i++)
 				P.AgeSusceptibility[i] = 1.0;
-		GetInputParameter(PreParamFile_dat, AdminFile_dat, "Age distribution of population", "%lf", (void*)P.PropAgeGroup[0], NUM_AGE_GROUPS, 1, 0);
+		GetInputParameter(PreParamFile_dat, AdminFile_dat, "Age distribution of population", "%f", (void*)P.PropAgeGroup[0], NUM_AGE_GROUPS, 1, 0);
 		t = 0;
 		for (i = 0; i < NUM_AGE_GROUPS; i++)
 			t += P.PropAgeGroup[0][i];
@@ -702,10 +702,10 @@ void ReadParams(std::string const& ParamFile, std::string const& PreParamFile, s
 			P.AgeSusceptibility[i] /= t;
 		AgeSuscScale = t;
 		if (P.DoHouseholds) P.HouseholdTrans *= AgeSuscScale;
-		if (!GetInputParameter2(PreParamFile_dat, AdminFile_dat, "Relative travel rates by age", "%lf", (void*)P.RelativeTravelRate, NUM_AGE_GROUPS, 1, 0))
+		if (!GetInputParameter2(PreParamFile_dat, AdminFile_dat, "Relative travel rates by age", "%f", (void*)P.RelativeTravelRate, NUM_AGE_GROUPS, 1, 0))
 			for (i = 0; i < NUM_AGE_GROUPS; i++)
 				P.RelativeTravelRate[i] = 1;
-		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "WAIFW matrix", "%lf", (void*)P.WAIFW_Matrix, NUM_AGE_GROUPS, NUM_AGE_GROUPS, 0))
+		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "WAIFW matrix", "%f", (void*)P.WAIFW_Matrix, NUM_AGE_GROUPS, NUM_AGE_GROUPS, 0))
 		{
 			for (i = 0; i < NUM_AGE_GROUPS; i++)
 				for (j = 0; j < NUM_AGE_GROUPS; j++)
@@ -744,23 +744,23 @@ void ReadParams(std::string const& ParamFile, std::string const& PreParamFile, s
 	{
 		if (!GetInputParameter2(PreParamFile_dat, AdminFile_dat, "Include spatial transmission", "%i", (void*)&(P.DoSpatial), 1, 1, 0)) P.DoSpatial = 1;
 		GetInputParameter(PreParamFile_dat, AdminFile_dat, "Kernel type", "%i", (void*)&(P.MoveKernel.type_), 1, 1, 0);
-		GetInputParameter(PreParamFile_dat, AdminFile_dat, "Kernel scale", "%lf", (void*)&(P.MoveKernel.scale_), 1, 1, 0);
+		GetInputParameter(PreParamFile_dat, AdminFile_dat, "Kernel scale", "%f", (void*)&(P.MoveKernel.scale_), 1, 1, 0);
 		if (P.KernelOffsetScale != 1)
 		{
 			P.MoveKernel.scale_ *= P.KernelOffsetScale;
 		}
-		if (!GetInputParameter2(PreParamFile_dat, AdminFile_dat, "Kernel 3rd param", "%lf", (void*)&(P.MoveKernel.p3_), 1, 1, 0)) P.MoveKernel.p3_ = 0;
-		if (!GetInputParameter2(PreParamFile_dat, AdminFile_dat, "Kernel 4th param", "%lf", (void*)&(P.MoveKernel.p4_), 1, 1, 0)) P.MoveKernel.p4_ = 0;
-		if (!GetInputParameter2(PreParamFile_dat, AdminFile_dat, "Kernel Shape", "%lf", (void*)&(P.MoveKernel.shape_), 1, 1, 0)) P.MoveKernel.shape_ = 1.0;
+		if (!GetInputParameter2(PreParamFile_dat, AdminFile_dat, "Kernel 3rd param", "%f", (void*)&(P.MoveKernel.p3_), 1, 1, 0)) P.MoveKernel.p3_ = 0;
+		if (!GetInputParameter2(PreParamFile_dat, AdminFile_dat, "Kernel 4th param", "%f", (void*)&(P.MoveKernel.p4_), 1, 1, 0)) P.MoveKernel.p4_ = 0;
+		if (!GetInputParameter2(PreParamFile_dat, AdminFile_dat, "Kernel Shape", "%f", (void*)&(P.MoveKernel.shape_), 1, 1, 0)) P.MoveKernel.shape_ = 1.0;
 		if (P.KernelPowerScale != 1)
 		{
 			P.MoveKernel.shape_ *= P.KernelPowerScale;
 		}
 		if (!GetInputParameter2(PreParamFile_dat, AdminFile_dat, "Airport Kernel Type", "%i", (void*)&(P.AirportKernel.type_), 1, 1, 0)) P.AirportKernel.type_ = P.MoveKernel.type_;
-		if (!GetInputParameter2(PreParamFile_dat, AdminFile_dat, "Airport Kernel Scale", "%lf", (void*)&(P.AirportKernel.scale_), 1, 1, 0)) P.AirportKernel.scale_ = P.MoveKernel.scale_;
-		if (!GetInputParameter2(PreParamFile_dat, AdminFile_dat, "Airport Kernel Shape", "%lf", (void*)&(P.AirportKernel.shape_), 1, 1, 0)) P.AirportKernel.shape_ = P.MoveKernel.shape_;
-		if (!GetInputParameter2(PreParamFile_dat, AdminFile_dat, "Airport Kernel 3rd param", "%lf", (void*)&(P.AirportKernel.p3_), 1, 1, 0)) P.AirportKernel.p3_ = P.MoveKernel.p3_;
-		if (!GetInputParameter2(PreParamFile_dat, AdminFile_dat, "Airport Kernel 4th param", "%lf", (void*)&(P.AirportKernel.p4_), 1, 1, 0)) P.AirportKernel.p4_ = P.MoveKernel.p4_;
+		if (!GetInputParameter2(PreParamFile_dat, AdminFile_dat, "Airport Kernel Scale", "%f", (void*)&(P.AirportKernel.scale_), 1, 1, 0)) P.AirportKernel.scale_ = P.MoveKernel.scale_;
+		if (!GetInputParameter2(PreParamFile_dat, AdminFile_dat, "Airport Kernel Shape", "%f", (void*)&(P.AirportKernel.shape_), 1, 1, 0)) P.AirportKernel.shape_ = P.MoveKernel.shape_;
+		if (!GetInputParameter2(PreParamFile_dat, AdminFile_dat, "Airport Kernel 3rd param", "%f", (void*)&(P.AirportKernel.p3_), 1, 1, 0)) P.AirportKernel.p3_ = P.MoveKernel.p3_;
+		if (!GetInputParameter2(PreParamFile_dat, AdminFile_dat, "Airport Kernel 4th param", "%f", (void*)&(P.AirportKernel.p4_), 1, 1, 0)) P.AirportKernel.p4_ = P.MoveKernel.p4_;
 
 		if (!GetInputParameter2(PreParamFile_dat, AdminFile_dat, "Include places", "%i", (void*)&(P.DoPlaces), 1, 1, 0)) P.DoPlaces = 1;
 		if (P.DoPlaces)
@@ -773,11 +773,11 @@ void ReadParams(std::string const& ParamFile, std::string const& PreParamFile, s
 	}
 	if (P.DoPlaces)
 	{
-		if (!GetInputParameter2(PreParamFile_dat, AdminFile_dat, "Scaling of household contacts for care home residents", "%lf", (void*)&(P.CareHomeResidentHouseholdScaling), 1, 1, 0)) P.CareHomeResidentHouseholdScaling = 1.0;
-		if (!GetInputParameter2(PreParamFile_dat, AdminFile_dat, "Scaling of spatial contacts for care home residents", "%lf", (void*)&(P.CareHomeResidentSpatialScaling), 1, 1, 0)) P.CareHomeResidentSpatialScaling = 1.0;
-		if (!GetInputParameter2(PreParamFile_dat, AdminFile_dat, "Scaling of between group (home) contacts for care home residents", "%lf", (void*)&(P.CareHomeResidentPlaceScaling), 1, 1, 0)) P.CareHomeResidentPlaceScaling = 1.0;
-		if (!GetInputParameter2(PreParamFile_dat, AdminFile_dat, "Scaling of within group (home) contacts for care home workers", "%lf", (void*)&(P.CareHomeWorkerGroupScaling), 1, 1, 0)) P.CareHomeWorkerGroupScaling = 1.0;
-		if (!GetInputParameter2(PreParamFile_dat, AdminFile_dat, "Relative probability that care home residents are hospitalised", "%lf", (void*)&(P.CareHomeRelProbHosp), 1, 1, 0)) P.CareHomeRelProbHosp = 1.0;
+		if (!GetInputParameter2(PreParamFile_dat, AdminFile_dat, "Scaling of household contacts for care home residents", "%f", (void*)&(P.CareHomeResidentHouseholdScaling), 1, 1, 0)) P.CareHomeResidentHouseholdScaling = 1.0;
+		if (!GetInputParameter2(PreParamFile_dat, AdminFile_dat, "Scaling of spatial contacts for care home residents", "%f", (void*)&(P.CareHomeResidentSpatialScaling), 1, 1, 0)) P.CareHomeResidentSpatialScaling = 1.0;
+		if (!GetInputParameter2(PreParamFile_dat, AdminFile_dat, "Scaling of between group (home) contacts for care home residents", "%f", (void*)&(P.CareHomeResidentPlaceScaling), 1, 1, 0)) P.CareHomeResidentPlaceScaling = 1.0;
+		if (!GetInputParameter2(PreParamFile_dat, AdminFile_dat, "Scaling of within group (home) contacts for care home workers", "%f", (void*)&(P.CareHomeWorkerGroupScaling), 1, 1, 0)) P.CareHomeWorkerGroupScaling = 1.0;
+		if (!GetInputParameter2(PreParamFile_dat, AdminFile_dat, "Relative probability that care home residents are hospitalised", "%f", (void*)&(P.CareHomeRelProbHosp), 1, 1, 0)) P.CareHomeRelProbHosp = 1.0;
 
 		if (P.FitIter == 0)
 		{
@@ -788,8 +788,8 @@ void ReadParams(std::string const& ParamFile, std::string const& PreParamFile, s
 
 			GetInputParameter(PreParamFile_dat, AdminFile_dat, "Minimum age for age group 1 in place types", "%i", (void*)P.PlaceTypeAgeMin, P.PlaceTypeNum, 1, 0);
 			GetInputParameter(PreParamFile_dat, AdminFile_dat, "Maximum age for age group 1 in place types", "%i", (void*)P.PlaceTypeAgeMax, P.PlaceTypeNum, 1, 0);
-			GetInputParameter(PreParamFile_dat, AdminFile_dat, "Proportion of age group 1 in place types", "%lf", (void*)&(P.PlaceTypePropAgeGroup), P.PlaceTypeNum, 1, 0);
-			if (!GetInputParameter2(PreParamFile_dat, AdminFile_dat, "Proportion of age group 2 in place types", "%lf", (void*)&(P.PlaceTypePropAgeGroup2), P.PlaceTypeNum, 1, 0))
+			GetInputParameter(PreParamFile_dat, AdminFile_dat, "Proportion of age group 1 in place types", "%f", (void*)&(P.PlaceTypePropAgeGroup), P.PlaceTypeNum, 1, 0);
+			if (!GetInputParameter2(PreParamFile_dat, AdminFile_dat, "Proportion of age group 2 in place types", "%f", (void*)&(P.PlaceTypePropAgeGroup2), P.PlaceTypeNum, 1, 0))
 			{
 				for (i = 0; i < NUM_PLACE_TYPES; i++)
 				{
@@ -803,7 +803,7 @@ void ReadParams(std::string const& ParamFile, std::string const& PreParamFile, s
 				GetInputParameter(PreParamFile_dat, AdminFile_dat, "Minimum age for age group 2 in place types", "%i", (void*)P.PlaceTypeAgeMin2, P.PlaceTypeNum, 1, 0);
 				GetInputParameter(PreParamFile_dat, AdminFile_dat, "Maximum age for age group 2 in place types", "%i", (void*)P.PlaceTypeAgeMax2, P.PlaceTypeNum, 1, 0);
 			}
-			if (!GetInputParameter2(PreParamFile_dat, AdminFile_dat, "Proportion of age group 3 in place types", "%lf", (void*)&(P.PlaceTypePropAgeGroup3), P.PlaceTypeNum, 1, 0))
+			if (!GetInputParameter2(PreParamFile_dat, AdminFile_dat, "Proportion of age group 3 in place types", "%f", (void*)&(P.PlaceTypePropAgeGroup3), P.PlaceTypeNum, 1, 0))
 			{
 				for (i = 0; i < NUM_PLACE_TYPES; i++)
 				{
@@ -817,7 +817,7 @@ void ReadParams(std::string const& ParamFile, std::string const& PreParamFile, s
 				GetInputParameter(PreParamFile_dat, AdminFile_dat, "Minimum age for age group 3 in place types", "%i", (void*)P.PlaceTypeAgeMin3, P.PlaceTypeNum, 1, 0);
 				GetInputParameter(PreParamFile_dat, AdminFile_dat, "Maximum age for age group 3 in place types", "%i", (void*)P.PlaceTypeAgeMax3, P.PlaceTypeNum, 1, 0);
 			}
-			if (!GetInputParameter2(PreParamFile_dat, AdminFile_dat, "Kernel shape params for place types", "%lf", (void*)&(P.PlaceTypeKernelShape), P.PlaceTypeNum, 1, 0))
+			if (!GetInputParameter2(PreParamFile_dat, AdminFile_dat, "Kernel shape params for place types", "%f", (void*)&(P.PlaceTypeKernelShape), P.PlaceTypeNum, 1, 0))
 			{
 				for (i = 0; i < NUM_PLACE_TYPES; i++)
 				{
@@ -826,8 +826,8 @@ void ReadParams(std::string const& ParamFile, std::string const& PreParamFile, s
 				}
 			}
 			else
-				GetInputParameter(PreParamFile_dat, AdminFile_dat, "Kernel scale params for place types", "%lf", (void*)&(P.PlaceTypeKernelScale), P.PlaceTypeNum, 1, 0);
-			if (!GetInputParameter2(PreParamFile_dat, AdminFile_dat, "Kernel 3rd param for place types", "%lf", (void*)&(P.PlaceTypeKernelP3), P.PlaceTypeNum, 1, 0))
+				GetInputParameter(PreParamFile_dat, AdminFile_dat, "Kernel scale params for place types", "%f", (void*)&(P.PlaceTypeKernelScale), P.PlaceTypeNum, 1, 0);
+			if (!GetInputParameter2(PreParamFile_dat, AdminFile_dat, "Kernel 3rd param for place types", "%f", (void*)&(P.PlaceTypeKernelP3), P.PlaceTypeNum, 1, 0))
 			{
 				for (i = 0; i < NUM_PLACE_TYPES; i++)
 				{
@@ -836,13 +836,13 @@ void ReadParams(std::string const& ParamFile, std::string const& PreParamFile, s
 				}
 			}
 			else
-				GetInputParameter(PreParamFile_dat, AdminFile_dat, "Kernel 4th param for place types", "%lf", (void*)&(P.PlaceTypeKernelP4), P.PlaceTypeNum, 1, 0);
+				GetInputParameter(PreParamFile_dat, AdminFile_dat, "Kernel 4th param for place types", "%f", (void*)&(P.PlaceTypeKernelP4), P.PlaceTypeNum, 1, 0);
 			if (!GetInputParameter2(PreParamFile_dat, AdminFile_dat, "Number of closest places people pick from (0=all) for place types", "%i", (void*)&(P.PlaceTypeNearestNeighb), P.PlaceTypeNum, 1, 0))
 				for (i = 0; i < NUM_PLACE_TYPES; i++)
 					P.PlaceTypeNearestNeighb[i] = 0;
 			if (P.DoAdUnits)
 			{
-				if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Degree to which crossing administrative unit boundaries to go to places is inhibited", "%lf", (void*)&(P.InhibitInterAdunitPlaceAssignment), P.PlaceTypeNum, 1, 0))
+				if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Degree to which crossing administrative unit boundaries to go to places is inhibited", "%f", (void*)&(P.InhibitInterAdunitPlaceAssignment), P.PlaceTypeNum, 1, 0))
 					for (i = 0; i < NUM_PLACE_TYPES; i++)
 						P.InhibitInterAdunitPlaceAssignment[i] = 0;
 			}
@@ -868,15 +868,15 @@ void ReadParams(std::string const& ParamFile, std::string const& PreParamFile, s
 					ERR_CRITICAL_FMT("[Hotel place type] parameter (%d) not in the range [%d, %d)\n", P.HotelPlaceType, P.PlaceTypeNoAirNum, P.PlaceTypeNum);
 				}
 
-				if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Scaling factor for input file to convert to daily traffic", "%lf", (void*)&(P.AirportTrafficScale), 1, 1, 0)) P.AirportTrafficScale = 1.0;
-				if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Proportion of hotel attendees who are local", "%lf", (void*)&(P.HotelPropLocal), 1, 1, 0)) P.HotelPropLocal = 0;
-				if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Distribution of duration of air journeys", "%lf", (void*)&(P.JourneyDurationDistrib), MAX_TRAVEL_TIME, 1, 0))
+				if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Scaling factor for input file to convert to daily traffic", "%f", (void*)&(P.AirportTrafficScale), 1, 1, 0)) P.AirportTrafficScale = 1.0;
+				if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Proportion of hotel attendees who are local", "%f", (void*)&(P.HotelPropLocal), 1, 1, 0)) P.HotelPropLocal = 0;
+				if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Distribution of duration of air journeys", "%f", (void*)&(P.JourneyDurationDistrib), MAX_TRAVEL_TIME, 1, 0))
 				{
 					P.JourneyDurationDistrib[0] = 1;
 					for (i = 0; i < MAX_TRAVEL_TIME; i++)
 						P.JourneyDurationDistrib[i] = 0;
 				}
-				if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Distribution of duration of local journeys", "%lf", (void*)&(P.LocalJourneyDurationDistrib), MAX_TRAVEL_TIME, 1, 0))
+				if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Distribution of duration of local journeys", "%f", (void*)&(P.LocalJourneyDurationDistrib), MAX_TRAVEL_TIME, 1, 0))
 				{
 					P.LocalJourneyDurationDistrib[0] = 1;
 					for (i = 0; i < MAX_TRAVEL_TIME; i++)
@@ -885,10 +885,10 @@ void ReadParams(std::string const& ParamFile, std::string const& PreParamFile, s
 				P.MeanJourneyTime = P.MeanLocalJourneyTime = 0;
 				for (i = 0; i < MAX_TRAVEL_TIME; i++)
 				{
-					P.MeanJourneyTime += ((double)(i)) * P.JourneyDurationDistrib[i];
-					P.MeanLocalJourneyTime += ((double)(i)) * P.LocalJourneyDurationDistrib[i];
+					P.MeanJourneyTime += ((float)(i)) * P.JourneyDurationDistrib[i];
+					P.MeanLocalJourneyTime += ((float)(i)) * P.LocalJourneyDurationDistrib[i];
 				}
-				fprintf(stderr, "Mean duration of local journeys = %lf days\n", P.MeanLocalJourneyTime);
+				fprintf(stderr, "Mean duration of local journeys = %f days\n", P.MeanLocalJourneyTime);
 				for (i = 1; i < MAX_TRAVEL_TIME; i++)
 				{
 					P.JourneyDurationDistrib[i] += P.JourneyDurationDistrib[i - 1];
@@ -896,35 +896,35 @@ void ReadParams(std::string const& ParamFile, std::string const& PreParamFile, s
 				}
 				for (i = j1 = j2 = 0; i <= 1024; i++)
 				{
-					s = ((double)i) / 1024;
+					s = ((float)i) / 1024;
 					while (P.JourneyDurationDistrib[j1] < s) j1++;
 					P.InvJourneyDurationDistrib[i] = j1;
 					while (P.LocalJourneyDurationDistrib[j2] < s) j2++;
 					P.InvLocalJourneyDurationDistrib[i] = j2;
 				}
 			}
-			GetInputParameter(PreParamFile_dat, AdminFile_dat, "Mean size of place types", "%lf", (void*)P.PlaceTypeMeanSize, P.PlaceTypeNum, 1, 0);
-			GetInputParameter(PreParamFile_dat, AdminFile_dat, "Param 1 of place group size distribution", "%lf", (void*)P.PlaceTypeGroupSizeParam1, P.PlaceTypeNum, 1, 0);
-			if (!GetInputParameter2(PreParamFile_dat, AdminFile_dat, "Power of place size distribution", "%lf", (void*)P.PlaceTypeSizePower, P.PlaceTypeNum, 1, 0))
+			GetInputParameter(PreParamFile_dat, AdminFile_dat, "Mean size of place types", "%f", (void*)P.PlaceTypeMeanSize, P.PlaceTypeNum, 1, 0);
+			GetInputParameter(PreParamFile_dat, AdminFile_dat, "Param 1 of place group size distribution", "%f", (void*)P.PlaceTypeGroupSizeParam1, P.PlaceTypeNum, 1, 0);
+			if (!GetInputParameter2(PreParamFile_dat, AdminFile_dat, "Power of place size distribution", "%f", (void*)P.PlaceTypeSizePower, P.PlaceTypeNum, 1, 0))
 				for (i = 0; i < NUM_PLACE_TYPES; i++)
 					P.PlaceTypeSizePower[i] = 0;
 			//added to enable lognormal distribution - ggilani 09/02/17
-			if (!GetInputParameter2(PreParamFile_dat, AdminFile_dat, "Standard deviation of place size distribution", "%lf", (void*)P.PlaceTypeSizeSD, P.PlaceTypeNum, 1, 0))
+			if (!GetInputParameter2(PreParamFile_dat, AdminFile_dat, "Standard deviation of place size distribution", "%f", (void*)P.PlaceTypeSizeSD, P.PlaceTypeNum, 1, 0))
 				for (i = 0; i < NUM_PLACE_TYPES; i++)
 					P.PlaceTypeSizeSD[i] = 0;
-			if (!GetInputParameter2(PreParamFile_dat, AdminFile_dat, "Offset of place size distribution", "%lf", (void*)P.PlaceTypeSizeOffset, P.PlaceTypeNum, 1, 0))
+			if (!GetInputParameter2(PreParamFile_dat, AdminFile_dat, "Offset of place size distribution", "%f", (void*)P.PlaceTypeSizeOffset, P.PlaceTypeNum, 1, 0))
 				for (i = 0; i < NUM_PLACE_TYPES; i++)
 					P.PlaceTypeSizeOffset[i] = 0;
-			if (!GetInputParameter2(PreParamFile_dat, AdminFile_dat, "Maximum of place size distribution", "%lf", (void*)P.PlaceTypeSizeMax, P.PlaceTypeNum, 1, 0))
+			if (!GetInputParameter2(PreParamFile_dat, AdminFile_dat, "Maximum of place size distribution", "%f", (void*)P.PlaceTypeSizeMax, P.PlaceTypeNum, 1, 0))
 				for (i = 0; i < NUM_PLACE_TYPES; i++)
 					P.PlaceTypeSizeMax[i] = 1e20;
-			if (!GetInputParameter2(PreParamFile_dat, AdminFile_dat, "Minimum of place size distribution", "%lf", (void*)P.PlaceTypeSizeMin, P.PlaceTypeNum, 1, 0))
+			if (!GetInputParameter2(PreParamFile_dat, AdminFile_dat, "Minimum of place size distribution", "%f", (void*)P.PlaceTypeSizeMin, P.PlaceTypeNum, 1, 0))
 				for (i = 0; i < NUM_PLACE_TYPES; i++)
 					P.PlaceTypeSizeMin[i] = 1.0;
 			if (!GetInputParameter2(PreParamFile_dat, AdminFile_dat, "Kernel type for place types", "%i", (void*)P.PlaceTypeKernelType, P.PlaceTypeNum, 1, 0))
 				for (i = 0; i < NUM_PLACE_TYPES; i++)
 					P.PlaceTypeKernelType[i] = P.MoveKernel.type_;
-			if (!GetInputParameter2(PreParamFile_dat, AdminFile_dat, "Place overlap matrix", "%lf", (void*)P.PlaceExclusivityMatrix, P.PlaceTypeNum * P.PlaceTypeNum, 1, 0))
+			if (!GetInputParameter2(PreParamFile_dat, AdminFile_dat, "Place overlap matrix", "%f", (void*)P.PlaceExclusivityMatrix, P.PlaceTypeNum * P.PlaceTypeNum, 1, 0))
 			{
 				for (i = 0; i < NUM_PLACE_TYPES; i++)
 					for (j = 0; j < NUM_PLACE_TYPES; j++)
@@ -933,11 +933,11 @@ void ReadParams(std::string const& ParamFile, std::string const& PreParamFile, s
 		}
 		/* Note P.PlaceExclusivityMatrix not used at present - places assumed exclusive (each person belongs to 0 or 1 place) */
 
-		GetInputParameter(ParamFile_dat, PreParamFile_dat, "Proportion of between group place links", "%lf", (void*)P.PlaceTypePropBetweenGroupLinks, P.PlaceTypeNum, 1, 0);
-		GetInputParameter(ParamFile_dat, PreParamFile_dat, "Relative transmission rates for place types", "%lf", (void*)P.PlaceTypeTrans, P.PlaceTypeNum, 1, 0);
+		GetInputParameter(ParamFile_dat, PreParamFile_dat, "Proportion of between group place links", "%f", (void*)P.PlaceTypePropBetweenGroupLinks, P.PlaceTypeNum, 1, 0);
+		GetInputParameter(ParamFile_dat, PreParamFile_dat, "Relative transmission rates for place types", "%f", (void*)P.PlaceTypeTrans, P.PlaceTypeNum, 1, 0);
 		for (i = 0; i < P.PlaceTypeNum; i++) P.PlaceTypeTrans[i] *= AgeSuscScale;
 	}
-	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Daily seasonality coefficients", "%lf", (void*)P.Seasonality, DAYS_PER_YEAR, 1, 0))
+	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Daily seasonality coefficients", "%f", (void*)P.Seasonality, DAYS_PER_YEAR, 1, 0))
 	{
 		P.DoSeasonality = 0;
 		for (i = 0; i < DAYS_PER_YEAR; i++)
@@ -961,15 +961,15 @@ void ReadParams(std::string const& ParamFile, std::string const& PreParamFile, s
 		P.NumSeedLocations = MAX_NUM_SEED_LOCATIONS;
 	}
 	GetInputParameter(PreParamFile_dat, AdminFile_dat, "Initial number of infecteds", "%i", (void*)P.NumInitialInfections, P.NumSeedLocations, 1, 0);
-	if (!GetInputParameter2(PreParamFile_dat, AdminFile_dat, "Location of initial infecteds", "%lf", (void*)&(P.LocationInitialInfection[0][0]), P.NumSeedLocations * 2, 1, 0)) P.LocationInitialInfection[0][0] = P.LocationInitialInfection[0][1] = 0.0;
+	if (!GetInputParameter2(PreParamFile_dat, AdminFile_dat, "Location of initial infecteds", "%f", (void*)&(P.LocationInitialInfection[0][0]), P.NumSeedLocations * 2, 1, 0)) P.LocationInitialInfection[0][0] = P.LocationInitialInfection[0][1] = 0.0;
 	if (!GetInputParameter2(PreParamFile_dat, AdminFile_dat, "Minimum population in microcell of initial infection", "%i", (void*)&(P.MinPopDensForInitialInfection), 1, 1, 0)) P.MinPopDensForInitialInfection = 0;
 	if (!GetInputParameter2(PreParamFile_dat, AdminFile_dat, "Maximum population in microcell of initial infection", "%i", (void*)&(P.MaxPopDensForInitialInfection), 1, 1, 0)) P.MaxPopDensForInitialInfection = 10000000;
 	if (!GetInputParameter2(PreParamFile_dat, AdminFile_dat, "Maximum age of initial infections", "%i", (void*)&(P.MaxAgeForInitialInfection), 1, 1, 0)) P.MaxAgeForInitialInfection = 1000;
 	if (!GetInputParameter2(PreParamFile_dat, AdminFile_dat, "Randomise initial infection location", "%i", (void*)&(P.DoRandomInitialInfectionLoc), 1, 1, 0)) P.DoRandomInitialInfectionLoc = 1;
 	if (!GetInputParameter2(PreParamFile_dat, AdminFile_dat, "All initial infections located in same microcell", "%i", (void*)&(P.DoAllInitialInfectioninSameLoc), 1, 1, 0)) P.DoAllInitialInfectioninSameLoc = 0;
-	if (GetInputParameter2(PreParamFile_dat, AdminFile_dat, "Day of year of start of seeding", "%lf", (void*)&(P.InitialInfectionCalTime), 1, 1, 0))
+	if (GetInputParameter2(PreParamFile_dat, AdminFile_dat, "Day of year of start of seeding", "%f", (void*)&(P.InitialInfectionCalTime), 1, 1, 0))
 	{
-		if (GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Scaling of infection seeding", "%lf", (void*)&(P.SeedingScaling), 1, 1, 0))
+		if (GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Scaling of infection seeding", "%f", (void*)&(P.SeedingScaling), 1, 1, 0))
 			P.DoNoCalibration = 1;
 		else
 		{
@@ -1002,7 +1002,7 @@ void ReadParams(std::string const& ParamFile, std::string const& PreParamFile, s
 					P.InitialInfectionsAdminUnit[i] = k;
 					P.InitialInfectionsAdminUnitId[i] = P.AdunitLevel1Lookup[(k % P.AdunitLevel1Mask) / P.AdunitLevel1Divisor];
 				}
-			if (!GetInputParameter2(PreParamFile_dat, AdminFile_dat, "Administrative unit seeding weights", "%lf", (void*)&(P.InitialInfectionsAdminUnitWeight[0]), P.NumSeedLocations, 1, 0))
+			if (!GetInputParameter2(PreParamFile_dat, AdminFile_dat, "Administrative unit seeding weights", "%f", (void*)&(P.InitialInfectionsAdminUnitWeight[0]), P.NumSeedLocations, 1, 0))
 				for (i = 0; i < P.NumSeedLocations; i++) P.InitialInfectionsAdminUnitWeight[i] = 1.0;
 			s = 0;
 			for (i = 0; i < P.NumSeedLocations; i++) s += P.InitialInfectionsAdminUnitWeight[i];
@@ -1013,34 +1013,34 @@ void ReadParams(std::string const& ParamFile, std::string const& PreParamFile, s
 			for (i = 0; i < P.NumSeedLocations; i++) P.InitialInfectionsAdminUnit[i] = 0;
 		}
 	}
-	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Initial rate of importation of infections", "%lf", (void*)&(P.InfectionImportRate1), 1, 1, 0)) P.InfectionImportRate1 = 0;
-	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Changed rate of importation of infections", "%lf", (void*)&(P.InfectionImportRate2), 1, 1, 0)) P.InfectionImportRate2 = 0;
-	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Time when infection rate changes", "%lf", (void*)&(P.InfectionImportChangeTime), 1, 1, 0)) P.InfectionImportChangeTime = 1e10;
+	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Initial rate of importation of infections", "%f", (void*)&(P.InfectionImportRate1), 1, 1, 0)) P.InfectionImportRate1 = 0;
+	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Changed rate of importation of infections", "%f", (void*)&(P.InfectionImportRate2), 1, 1, 0)) P.InfectionImportRate2 = 0;
+	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Time when infection rate changes", "%f", (void*)&(P.InfectionImportChangeTime), 1, 1, 0)) P.InfectionImportChangeTime = 1e10;
 	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Imports via air travel", "%i", (void*)&(P.DoImportsViaAirports), 1, 1, 0)) P.DoImportsViaAirports = 0;
 	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Length of importation time profile provided", "%i", (void*)&(P.DurImportTimeProfile), 1, 1, 0)) P.DurImportTimeProfile = 0;
 	if (P.DurImportTimeProfile > 0)
 	{
 		if (P.DurImportTimeProfile >= MAX_DUR_IMPORT_PROFILE) ERR_CRITICAL("MAX_DUR_IMPORT_PROFILE too small\n");
-		GetInputParameter(ParamFile_dat, PreParamFile_dat, "Daily importation time profile", "%lf", (void*)P.ImportInfectionTimeProfile, P.DurImportTimeProfile, 1, 0);
+		GetInputParameter(ParamFile_dat, PreParamFile_dat, "Daily importation time profile", "%f", (void*)P.ImportInfectionTimeProfile, P.DurImportTimeProfile, 1, 0);
 	}
-	GetInputParameter(ParamFile_dat, PreParamFile_dat, "Reproduction number", "%lf", (void*)&(P.R0), 1, 1, 0);
-	if (GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Beta for spatial transmission", "%lf", (void*)&(P.LocalBeta), 1, 1, 0))
+	GetInputParameter(ParamFile_dat, PreParamFile_dat, "Reproduction number", "%f", (void*)&(P.R0), 1, 1, 0);
+	if (GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Beta for spatial transmission", "%f", (void*)&(P.LocalBeta), 1, 1, 0))
 		P.FixLocalBeta = 1;
 	else
 	{
 		P.LocalBeta = -1.0;
 		P.FixLocalBeta = 0;
 	}
-	GetInputParameter(ParamFile_dat, PreParamFile_dat, "Infectious period", "%lf", (void*)&(P.InfectiousPeriod), 1, 1, 0);
-	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "SD of individual variation in susceptibility", "%lf", (void*)&(P.SusceptibilitySD), 1, 1, 0)) P.SusceptibilitySD = 0;
-	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "SD of individual variation in infectiousness", "%lf", (void*)&(P.InfectiousnessSD), 1, 1, 0)) P.InfectiousnessSD = 0;
-	if (GetInputParameter2(ParamFile_dat, PreParamFile_dat, "k of individual variation in infectiousness", "%lf", (void*)&s, 1, 1, 0)) P.InfectiousnessSD = 1.0 / sqrt(s);
+	GetInputParameter(ParamFile_dat, PreParamFile_dat, "Infectious period", "%f", (void*)&(P.InfectiousPeriod), 1, 1, 0);
+	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "SD of individual variation in susceptibility", "%f", (void*)&(P.SusceptibilitySD), 1, 1, 0)) P.SusceptibilitySD = 0;
+	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "SD of individual variation in infectiousness", "%f", (void*)&(P.InfectiousnessSD), 1, 1, 0)) P.InfectiousnessSD = 0;
+	if (GetInputParameter2(ParamFile_dat, PreParamFile_dat, "k of individual variation in infectiousness", "%f", (void*)&s, 1, 1, 0)) P.InfectiousnessSD = 1.0 / sqrt(s);
 	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "k does not apply in households", "%i", (void*)&P.NoInfectiousnessSDinHH, 1, 1, 0)) P.NoInfectiousnessSDinHH = 0;
 	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Model time varying infectiousness", "%i", (void*)&(P.DoInfectiousnessProfile), 1, 1, 0)) P.DoInfectiousnessProfile = 0;
-	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Power of scaling of spatial R0 with density", "%lf", (void*)&(P.R0DensityScalePower), 1, 1, 0)) P.R0DensityScalePower = 0;
+	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Power of scaling of spatial R0 with density", "%f", (void*)&(P.R0DensityScalePower), 1, 1, 0)) P.R0DensityScalePower = 0;
 	if (P.DoInfectiousnessProfile)
 	{
-		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Infectiousness profile", "%lf", (void*)P.infectious_prof, INFPROF_RES, 1, 0))
+		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Infectiousness profile", "%f", (void*)P.infectious_prof, INFPROF_RES, 1, 0))
 		{
 			for (i = 0; i < INFPROF_RES; i++)
 				P.infectious_prof[i] = 1;
@@ -1052,21 +1052,21 @@ void ReadParams(std::string const& ParamFile, std::string const& PreParamFile, s
 		for (i = 0; i < MAX_INFECTIOUS_STEPS; i++)	P.infectiousness[i] = 0;
 		for (i = 0; i < k; i++)
 		{
-			t = (((double)i) * P.TimeStep / P.InfectiousPeriod * INFPROF_RES);
+			t = (((float)i) * P.TimeStep / P.InfectiousPeriod * INFPROF_RES);
 			j = (int)t;
-			t -= (double)j;
+			t -= (float)j;
 			if (j < INFPROF_RES)
 				s += (P.infectiousness[i] = P.infectious_prof[j] * (1 - t) + P.infectious_prof[j + 1] * t);
 			else
 				s += (P.infectiousness[i] = P.infectious_prof[INFPROF_RES]);
 		}
-		s /= ((double)k);
+		s /= ((float)k);
 		for (i = 0; i <= k; i++) P.infectiousness[i] /= s;
 		P.infectious_icdf.assign_exponent(-1.0);
 	}
 	else
 	{
-		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Infectious period inverse CDF", "%lf", (void*)P.infectious_icdf.get_values(), CDF_RES + 1, 1, 0))
+		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Infectious period inverse CDF", "%f", (void*)P.infectious_icdf.get_values(), CDF_RES + 1, 1, 0))
 		{
 			P.infectious_icdf.set_neg_log(ICDF_START);
 		}
@@ -1079,7 +1079,7 @@ void ReadParams(std::string const& ParamFile, std::string const& PreParamFile, s
 	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Include latent period", "%i", (void*)&(P.DoLatent), 1, 1, 0)) P.DoLatent = 0;
 	if (P.DoLatent)
 	{
-		GetInputParameter(ParamFile_dat, PreParamFile_dat, "Latent period", "%lf", (void*) &(P.LatentPeriod), 1, 1, 0);
+		GetInputParameter(ParamFile_dat, PreParamFile_dat, "Latent period", "%f", (void*) &(P.LatentPeriod), 1, 1, 0);
 		GetInverseCdf(ParamFile_dat, PreParamFile_dat, "Latent period inverse CDF", &P.latent_icdf, 1e10);
 	}
 
@@ -1095,21 +1095,21 @@ void ReadParams(std::string const& ParamFile, std::string const& PreParamFile, s
 	else
 	{
 		if (P.DoAge)
-			GetInputParameter(ParamFile_dat, PreParamFile_dat, "Proportion symptomatic by age group", "%lf", (void*)P.ProportionSymptomatic, NUM_AGE_GROUPS, 1, 0);
+			GetInputParameter(ParamFile_dat, PreParamFile_dat, "Proportion symptomatic by age group", "%f", (void*)P.ProportionSymptomatic, NUM_AGE_GROUPS, 1, 0);
 		else
 		{
-			GetInputParameter(ParamFile_dat, PreParamFile_dat, "Proportion symptomatic", "%lf", (void*)P.ProportionSymptomatic, 1, 1, 0);
+			GetInputParameter(ParamFile_dat, PreParamFile_dat, "Proportion symptomatic", "%f", (void*)P.ProportionSymptomatic, 1, 1, 0);
 			for (i = 1; i < NUM_AGE_GROUPS; i++)
 				P.ProportionSymptomatic[i] = P.ProportionSymptomatic[0];
 		}
-		GetInputParameter(ParamFile_dat, PreParamFile_dat, "Delay from end of latent period to start of symptoms", "%lf", (void*)&(P.LatentToSymptDelay), 1, 1, 0);
-		GetInputParameter(ParamFile_dat, PreParamFile_dat, "Relative rate of random contacts if symptomatic", "%lf", (void*)&(P.SymptSpatialContactRate), 1, 1, 0);
-		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Symptomatic infectiousness relative to asymptomatic", "%lf", (void*)&(P.SymptInfectiousness), 1, 1, 0)) P.SymptInfectiousness = 1.0;
-		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Asymptomatic infectiousness relative to symptomatic", "%lf", (void*)&(P.AsymptInfectiousness), 1, 1, 0)) P.AsymptInfectiousness = 1.0;
+		GetInputParameter(ParamFile_dat, PreParamFile_dat, "Delay from end of latent period to start of symptoms", "%f", (void*)&(P.LatentToSymptDelay), 1, 1, 0);
+		GetInputParameter(ParamFile_dat, PreParamFile_dat, "Relative rate of random contacts if symptomatic", "%f", (void*)&(P.SymptSpatialContactRate), 1, 1, 0);
+		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Symptomatic infectiousness relative to asymptomatic", "%f", (void*)&(P.SymptInfectiousness), 1, 1, 0)) P.SymptInfectiousness = 1.0;
+		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Asymptomatic infectiousness relative to symptomatic", "%f", (void*)&(P.AsymptInfectiousness), 1, 1, 0)) P.AsymptInfectiousness = 1.0;
 		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Model symptomatic withdrawal to home as true absenteeism", "%i", (void*)&P.DoRealSymptWithdrawal, 1, 1, 0)) P.DoRealSymptWithdrawal = 0;
 		if (P.DoPlaces)
 		{
-			GetInputParameter(ParamFile_dat, PreParamFile_dat, "Relative level of place attendance if symptomatic", "%lf", (void*)P.SymptPlaceTypeContactRate, P.PlaceTypeNum, 1, 0);
+			GetInputParameter(ParamFile_dat, PreParamFile_dat, "Relative level of place attendance if symptomatic", "%f", (void*)P.SymptPlaceTypeContactRate, P.PlaceTypeNum, 1, 0);
 			if (P.DoRealSymptWithdrawal)
 			{
 				for (j = 0; j < NUM_PLACE_TYPES; j++)
@@ -1122,7 +1122,7 @@ void ReadParams(std::string const& ParamFile, std::string const& PreParamFile, s
 				for (j = 0; j < NUM_PLACE_TYPES; j++) P.SymptPlaceTypeWithdrawalProp[j] = 0.0;
 		}
 		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Maximum age of child at home for whom one adult also stays at home", "%i", (void*)&P.CaseAbsentChildAgeCutoff, 1, 1, 0)) P.CaseAbsentChildAgeCutoff = 0;
-		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Proportion of children at home for whom one adult also stays at home", "%lf", (void*)&P.CaseAbsentChildPropAdultCarers, 1, 1, 0)) P.CaseAbsentChildPropAdultCarers = 0;
+		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Proportion of children at home for whom one adult also stays at home", "%f", (void*)&P.CaseAbsentChildPropAdultCarers, 1, 1, 0)) P.CaseAbsentChildPropAdultCarers = 0;
 		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Place close round household", "%i", (void*)&P.PlaceCloseRoundHousehold, 1, 1, 0)) P.PlaceCloseRoundHousehold = 1;
 		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Absenteeism place closure", "%i", (void*)&P.AbsenteeismPlaceClosure, 1, 1, 0)) P.AbsenteeismPlaceClosure = 0;
 		if (P.AbsenteeismPlaceClosure)
@@ -1136,45 +1136,45 @@ void ReadParams(std::string const& ParamFile, std::string const& PreParamFile, s
 		}
 		else
 		{
-			if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Delay in starting place absenteeism for cases who withdraw", "%lf", (void*)&P.CaseAbsenteeismDelay, 1, 1, 0)) P.CaseAbsenteeismDelay = 0;
+			if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Delay in starting place absenteeism for cases who withdraw", "%f", (void*)&P.CaseAbsenteeismDelay, 1, 1, 0)) P.CaseAbsenteeismDelay = 0;
 			P.MaxAbsentTime = 0; // Not used when !P.AbsenteeismPlaceClosure
 		}
-		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Duration of place absenteeism for cases who withdraw", "%lf", (void*)&P.CaseAbsenteeismDuration, 1, 1, 0)) P.CaseAbsenteeismDuration = 7;
+		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Duration of place absenteeism for cases who withdraw", "%f", (void*)&P.CaseAbsenteeismDuration, 1, 1, 0)) P.CaseAbsenteeismDuration = 7;
 
-		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "False positive rate", "%lf", (void*)&(P.FalsePositiveRate), 1, 1, 0)) P.FalsePositiveRate = 0.0;
-		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "False positive per capita incidence", "%lf", (void*)&(P.FalsePositivePerCapitaIncidence), 1, 1, 0)) P.FalsePositivePerCapitaIncidence = 0.0;
-		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "False positive relative incidence by age", "%lf", (void*)P.FalsePositiveAgeRate, NUM_AGE_GROUPS, 1, 0))
+		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "False positive rate", "%f", (void*)&(P.FalsePositiveRate), 1, 1, 0)) P.FalsePositiveRate = 0.0;
+		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "False positive per capita incidence", "%f", (void*)&(P.FalsePositivePerCapitaIncidence), 1, 1, 0)) P.FalsePositivePerCapitaIncidence = 0.0;
+		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "False positive relative incidence by age", "%f", (void*)P.FalsePositiveAgeRate, NUM_AGE_GROUPS, 1, 0))
 			for (j = 0; j < NUM_AGE_GROUPS; j++) P.FalsePositiveAgeRate[j] = 1.0;
 	}
 
-	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Maximum sensitivity of serology assay", "%lf", (void*)&(P.SeroConvMaxSens), 1, 1, 0)) P.SeroConvMaxSens = 1.0;
-	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Seroconversion model parameter 1", "%lf", (void*)&(P.SeroConvP1), 1, 1, 0)) P.SeroConvP1 = 14.0;
-	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Seroconversion model parameter 2", "%lf", (void*)&(P.SeroConvP2), 1, 1, 0)) P.SeroConvP2 = 3.0;
-	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Specificity of serology assay", "%lf", (void*)&(P.SeroConvSpec), 1, 1, 0)) P.SeroConvSpec = 1.0;
-	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Scaling of modelled infection prevalence to match surveys", "%lf", (void*)&(P.InfPrevSurveyScale), 1, 1, 0)) P.InfPrevSurveyScale = 1.0;
+	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Maximum sensitivity of serology assay", "%f", (void*)&(P.SeroConvMaxSens), 1, 1, 0)) P.SeroConvMaxSens = 1.0;
+	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Seroconversion model parameter 1", "%f", (void*)&(P.SeroConvP1), 1, 1, 0)) P.SeroConvP1 = 14.0;
+	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Seroconversion model parameter 2", "%f", (void*)&(P.SeroConvP2), 1, 1, 0)) P.SeroConvP2 = 3.0;
+	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Specificity of serology assay", "%f", (void*)&(P.SeroConvSpec), 1, 1, 0)) P.SeroConvSpec = 1.0;
+	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Scaling of modelled infection prevalence to match surveys", "%f", (void*)&(P.InfPrevSurveyScale), 1, 1, 0)) P.InfPrevSurveyScale = 1.0;
 
 	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Do Severity Analysis", "%i", (void*)&(P.DoSeverity), 1, 1, 0)) P.DoSeverity = 0;
 	if (P.DoSeverity)
 	{
-		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Factor to scale IFR", "%lf", (void*)&(P.ScaleIFR), 1, 1, 0)) P.ScaleIFR = 1.0;
+		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Factor to scale IFR", "%f", (void*)&(P.ScaleIFR), 1, 1, 0)) P.ScaleIFR = 1.0;
 		//// Means for icdf's.
-		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "MeanTimeToTest", "%lf", (void*)&(P.Mean_TimeToTest), 1, 1, 0)) P.Mean_TimeToTest = 0.0;
-		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "MeanTimeToTestOffset", "%lf", (void*)&(P.Mean_TimeToTestOffset), 1, 1, 0)) P.Mean_TimeToTestOffset = 1.0;
-		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "MeanTimeToTestCriticalOffset", "%lf", (void*)&(P.Mean_TimeToTestCriticalOffset), 1, 1, 0)) P.Mean_TimeToTestCriticalOffset = 1.0;
-		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "MeanTimeToTestCritRecovOffset", "%lf", (void*)&(P.Mean_TimeToTestCritRecovOffset), 1, 1, 0)) P.Mean_TimeToTestCritRecovOffset = 1.0;
+		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "MeanTimeToTest", "%f", (void*)&(P.Mean_TimeToTest), 1, 1, 0)) P.Mean_TimeToTest = 0.0;
+		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "MeanTimeToTestOffset", "%f", (void*)&(P.Mean_TimeToTestOffset), 1, 1, 0)) P.Mean_TimeToTestOffset = 1.0;
+		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "MeanTimeToTestCriticalOffset", "%f", (void*)&(P.Mean_TimeToTestCriticalOffset), 1, 1, 0)) P.Mean_TimeToTestCriticalOffset = 1.0;
+		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "MeanTimeToTestCritRecovOffset", "%f", (void*)&(P.Mean_TimeToTestCritRecovOffset), 1, 1, 0)) P.Mean_TimeToTestCritRecovOffset = 1.0;
 		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Age dependent severity delays", "%i", (void*)&i, 1, 1, 0)) i = 0;
 		if (!i)
 		{
-			GetInputParameter(ParamFile_dat, PreParamFile_dat, "Mean_MildToRecovery", "%lf", (void*)&(P.Mean_MildToRecovery[0]), 1, 1, 0);
-			GetInputParameter(ParamFile_dat, PreParamFile_dat, "Mean_ILIToRecovery", "%lf", (void*)&(P.Mean_ILIToRecovery[0]), 1, 1, 0);
-			GetInputParameter(ParamFile_dat, PreParamFile_dat, "Mean_SARIToRecovery", "%lf", (void*)&(P.Mean_SARIToRecovery[0]), 1, 1, 0);
-			GetInputParameter(ParamFile_dat, PreParamFile_dat, "Mean_CriticalToCritRecov", "%lf", (void*)&(P.Mean_CriticalToCritRecov[0]), 1, 1, 0);
-			GetInputParameter(ParamFile_dat, PreParamFile_dat, "Mean_CritRecovToRecov", "%lf", (void*)&(P.Mean_CritRecovToRecov[0]), 1, 1, 0);
-			GetInputParameter(ParamFile_dat, PreParamFile_dat, "Mean_ILIToSARI", "%lf", (void*)&(P.Mean_ILIToSARI[0]), 1, 1, 0);
-			if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Mean_ILIToDeath", "%lf", (void*)&(P.Mean_ILIToDeath[0]), 1, 1, 0)) P.Mean_ILIToDeath[0] = 7.0;
-			GetInputParameter(ParamFile_dat, PreParamFile_dat, "Mean_SARIToCritical", "%lf", (void*)&(P.Mean_SARIToCritical[0]), 1, 1, 0);
-			GetInputParameter(ParamFile_dat, PreParamFile_dat, "Mean_SARIToDeath", "%lf", (void*)&(P.Mean_SARIToDeath[0]), 1, 1, 0);
-			GetInputParameter(ParamFile_dat, PreParamFile_dat, "Mean_CriticalToDeath", "%lf", (void*)&(P.Mean_CriticalToDeath[0]), 1, 1, 0);
+			GetInputParameter(ParamFile_dat, PreParamFile_dat, "Mean_MildToRecovery", "%f", (void*)&(P.Mean_MildToRecovery[0]), 1, 1, 0);
+			GetInputParameter(ParamFile_dat, PreParamFile_dat, "Mean_ILIToRecovery", "%f", (void*)&(P.Mean_ILIToRecovery[0]), 1, 1, 0);
+			GetInputParameter(ParamFile_dat, PreParamFile_dat, "Mean_SARIToRecovery", "%f", (void*)&(P.Mean_SARIToRecovery[0]), 1, 1, 0);
+			GetInputParameter(ParamFile_dat, PreParamFile_dat, "Mean_CriticalToCritRecov", "%f", (void*)&(P.Mean_CriticalToCritRecov[0]), 1, 1, 0);
+			GetInputParameter(ParamFile_dat, PreParamFile_dat, "Mean_CritRecovToRecov", "%f", (void*)&(P.Mean_CritRecovToRecov[0]), 1, 1, 0);
+			GetInputParameter(ParamFile_dat, PreParamFile_dat, "Mean_ILIToSARI", "%f", (void*)&(P.Mean_ILIToSARI[0]), 1, 1, 0);
+			if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Mean_ILIToDeath", "%f", (void*)&(P.Mean_ILIToDeath[0]), 1, 1, 0)) P.Mean_ILIToDeath[0] = 7.0;
+			GetInputParameter(ParamFile_dat, PreParamFile_dat, "Mean_SARIToCritical", "%f", (void*)&(P.Mean_SARIToCritical[0]), 1, 1, 0);
+			GetInputParameter(ParamFile_dat, PreParamFile_dat, "Mean_SARIToDeath", "%f", (void*)&(P.Mean_SARIToDeath[0]), 1, 1, 0);
+			GetInputParameter(ParamFile_dat, PreParamFile_dat, "Mean_CriticalToDeath", "%f", (void*)&(P.Mean_CriticalToDeath[0]), 1, 1, 0);
 			for (int AgeGroup = 1; AgeGroup < NUM_AGE_GROUPS; AgeGroup++)
 			{
 				P.Mean_MildToRecovery		[AgeGroup] = P.Mean_MildToRecovery		[0];
@@ -1191,17 +1191,17 @@ void ReadParams(std::string const& ParamFile, std::string const& PreParamFile, s
 		}
 		else
 		{
-			GetInputParameter(ParamFile_dat, PreParamFile_dat, "Mean_MildToRecovery", "%lf", (void*)(P.Mean_MildToRecovery), NUM_AGE_GROUPS, 1, 0);
-			GetInputParameter(ParamFile_dat, PreParamFile_dat, "Mean_ILIToRecovery", "%lf", (void*)(P.Mean_ILIToRecovery), NUM_AGE_GROUPS, 1, 0);
-			GetInputParameter(ParamFile_dat, PreParamFile_dat, "Mean_SARIToRecovery", "%lf", (void*)(P.Mean_SARIToRecovery), NUM_AGE_GROUPS, 1, 0);
-			GetInputParameter(ParamFile_dat, PreParamFile_dat, "Mean_CriticalToCritRecov", "%lf", (void*)(P.Mean_CriticalToCritRecov), NUM_AGE_GROUPS, 1, 0);
-			GetInputParameter(ParamFile_dat, PreParamFile_dat, "Mean_CritRecovToRecov", "%lf", (void*)(P.Mean_CritRecovToRecov), NUM_AGE_GROUPS, 1, 0);
-			GetInputParameter(ParamFile_dat, PreParamFile_dat, "Mean_ILIToSARI", "%lf", (void*)(P.Mean_ILIToSARI), NUM_AGE_GROUPS, 1, 0);
-			if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Mean_ILIToDeath", "%lf", (void*)(P.Mean_ILIToDeath), NUM_AGE_GROUPS, 1, 0))
+			GetInputParameter(ParamFile_dat, PreParamFile_dat, "Mean_MildToRecovery", "%f", (void*)(P.Mean_MildToRecovery), NUM_AGE_GROUPS, 1, 0);
+			GetInputParameter(ParamFile_dat, PreParamFile_dat, "Mean_ILIToRecovery", "%f", (void*)(P.Mean_ILIToRecovery), NUM_AGE_GROUPS, 1, 0);
+			GetInputParameter(ParamFile_dat, PreParamFile_dat, "Mean_SARIToRecovery", "%f", (void*)(P.Mean_SARIToRecovery), NUM_AGE_GROUPS, 1, 0);
+			GetInputParameter(ParamFile_dat, PreParamFile_dat, "Mean_CriticalToCritRecov", "%f", (void*)(P.Mean_CriticalToCritRecov), NUM_AGE_GROUPS, 1, 0);
+			GetInputParameter(ParamFile_dat, PreParamFile_dat, "Mean_CritRecovToRecov", "%f", (void*)(P.Mean_CritRecovToRecov), NUM_AGE_GROUPS, 1, 0);
+			GetInputParameter(ParamFile_dat, PreParamFile_dat, "Mean_ILIToSARI", "%f", (void*)(P.Mean_ILIToSARI), NUM_AGE_GROUPS, 1, 0);
+			if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Mean_ILIToDeath", "%f", (void*)(P.Mean_ILIToDeath), NUM_AGE_GROUPS, 1, 0))
 				for (j = 0; j < NUM_AGE_GROUPS; j++) P.Mean_ILIToDeath[j] = 7.0;
-			GetInputParameter(ParamFile_dat, PreParamFile_dat, "Mean_SARIToCritical", "%lf", (void*)(P.Mean_SARIToCritical), NUM_AGE_GROUPS, 1, 0);
-			GetInputParameter(ParamFile_dat, PreParamFile_dat, "Mean_SARIToDeath", "%lf", (void*)(P.Mean_SARIToDeath), NUM_AGE_GROUPS, 1, 0);
-			GetInputParameter(ParamFile_dat, PreParamFile_dat, "Mean_CriticalToDeath", "%lf", (void*)(P.Mean_CriticalToDeath), NUM_AGE_GROUPS, 1, 0);
+			GetInputParameter(ParamFile_dat, PreParamFile_dat, "Mean_SARIToCritical", "%f", (void*)(P.Mean_SARIToCritical), NUM_AGE_GROUPS, 1, 0);
+			GetInputParameter(ParamFile_dat, PreParamFile_dat, "Mean_SARIToDeath", "%f", (void*)(P.Mean_SARIToDeath), NUM_AGE_GROUPS, 1, 0);
+			GetInputParameter(ParamFile_dat, PreParamFile_dat, "Mean_CriticalToDeath", "%f", (void*)(P.Mean_CriticalToDeath), NUM_AGE_GROUPS, 1, 0);
 		}
 
 		//// Get InverseCDFs
@@ -1216,31 +1216,31 @@ void ReadParams(std::string const& ParamFile, std::string const& PreParamFile, s
 		GetInverseCdf(ParamFile_dat, PreParamFile_dat, "SARIToDeath_icdf", &P.SARIToDeath_icdf);
 		GetInverseCdf(ParamFile_dat, PreParamFile_dat, "CriticalToDeath_icdf", &P.CriticalToDeath_icdf);
 
-		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Prop_Mild_ByAge", "%lf", (void*)P.Prop_Mild_ByAge, NUM_AGE_GROUPS, 1, 0))
+		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Prop_Mild_ByAge", "%f", (void*)P.Prop_Mild_ByAge, NUM_AGE_GROUPS, 1, 0))
 			for (i = 0; i < NUM_AGE_GROUPS; i++)
 				P.Prop_Mild_ByAge[i] = 0.5;
 
-		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Prop_ILI_ByAge", "%lf", (void*)P.Prop_ILI_ByAge, NUM_AGE_GROUPS, 1, 0))
+		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Prop_ILI_ByAge", "%f", (void*)P.Prop_ILI_ByAge, NUM_AGE_GROUPS, 1, 0))
 			for (i = 0; i < NUM_AGE_GROUPS; i++)
 				P.Prop_ILI_ByAge[i] = 0.3;
 
-		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Prop_SARI_ByAge", "%lf", (void*)P.Prop_SARI_ByAge, NUM_AGE_GROUPS, 1, 0))
+		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Prop_SARI_ByAge", "%f", (void*)P.Prop_SARI_ByAge, NUM_AGE_GROUPS, 1, 0))
 			for (i = 0; i < NUM_AGE_GROUPS; i++)
 				P.Prop_SARI_ByAge[i] = 0.15;
 
-		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Prop_Critical_ByAge", "%lf", (void*)P.Prop_Critical_ByAge, NUM_AGE_GROUPS, 1, 0))
+		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Prop_Critical_ByAge", "%f", (void*)P.Prop_Critical_ByAge, NUM_AGE_GROUPS, 1, 0))
 			for (i = 0; i < NUM_AGE_GROUPS; i++)
 				P.Prop_Critical_ByAge[i] = 0.05;
 
-		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "CFR_SARI_ByAge", "%lf", (void*)P.CFR_SARI_ByAge, NUM_AGE_GROUPS, 1, 0))
+		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "CFR_SARI_ByAge", "%f", (void*)P.CFR_SARI_ByAge, NUM_AGE_GROUPS, 1, 0))
 			for (i = 0; i < NUM_AGE_GROUPS; i++)
 				P.CFR_SARI_ByAge[i] = 0.50;
 
-		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "CFR_Critical_ByAge", "%lf", (void*)P.CFR_Critical_ByAge, NUM_AGE_GROUPS, 1, 0))
+		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "CFR_Critical_ByAge", "%f", (void*)P.CFR_Critical_ByAge, NUM_AGE_GROUPS, 1, 0))
 			for (i = 0; i < NUM_AGE_GROUPS; i++)
 				P.CFR_Critical_ByAge[i] = 0.50;
 
-		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "CFR_ILI_ByAge", "%lf", (void*)P.CFR_ILI_ByAge, NUM_AGE_GROUPS, 1, 0))
+		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "CFR_ILI_ByAge", "%f", (void*)P.CFR_ILI_ByAge, NUM_AGE_GROUPS, 1, 0))
 			for (i = 0; i < NUM_AGE_GROUPS; i++)
 				P.CFR_ILI_ByAge[i] = 0.00;
 
@@ -1254,20 +1254,20 @@ void ReadParams(std::string const& ParamFile, std::string const& PreParamFile, s
 	}
 	if (P.FitIter == 0)
 	{
-		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Bounding box for bitmap", "%lf", (void*) &(P.BoundingBox.bottom_left().x), 4, 1, 0))
+		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Bounding box for bitmap", "%f", (void*) &(P.BoundingBox.bottom_left().x), 4, 1, 0))
 		{
-			P.BoundingBox.bottom_left() = Geometry::Vector2d(0.0, 0.0);
-			P.BoundingBox.top_right()   = Geometry::Vector2d(1.0, 1.0);
+			P.BoundingBox.bottom_left() = Geometry::Vector2f(0.0, 0.0);
+			P.BoundingBox.top_right()   = Geometry::Vector2f(1.0, 1.0);
 		}
-		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Spatial domain for simulation", "%lf", (void*) &(P.SpatialBoundingBox.bottom_left().x), 4, 1, 0))
+		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Spatial domain for simulation", "%f", (void*) &(P.SpatialBoundingBox.bottom_left().x), 4, 1, 0))
 		{
-			P.SpatialBoundingBox.bottom_left() = Geometry::Vector2d(0.0, 0.0);
-			P.SpatialBoundingBox.top_right()   = Geometry::Vector2d(1.0, 1.0);
+			P.SpatialBoundingBox.bottom_left() = Geometry::Vector2f(0.0, 0.0);
+			P.SpatialBoundingBox.top_right()   = Geometry::Vector2f(1.0, 1.0);
 		}
-		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Grid size", "%lf", (void*)&(P.in_cells_.width), 1, 1, 0)) P.in_cells_.width = 1.0 / 120.0;
+		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Grid size", "%f", (void*)&(P.in_cells_.width), 1, 1, 0)) P.in_cells_.width = 1.0 / 120.0;
 		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Use long/lat coord system", "%i", (void*)&(P.DoUTM_coords), 1, 1, 0)) P.DoUTM_coords = 1;
-		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Bitmap scale", "%lf", (void*)&(P.BitmapScale), 1, 1, 0)) P.BitmapScale = 1.0;
-		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Bitmap y:x aspect scaling", "%lf", (void*)&(P.BitmapAspectScale), 1, 1, 0)) P.BitmapAspectScale = 1.0;
+		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Bitmap scale", "%f", (void*)&(P.BitmapScale), 1, 1, 0)) P.BitmapScale = 1.0;
+		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Bitmap y:x aspect scaling", "%f", (void*)&(P.BitmapAspectScale), 1, 1, 0)) P.BitmapAspectScale = 1.0;
 		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Bitmap movie frame interval", "%i", (void*)&(P.BitmapMovieFrame), 1, 1, 0)) P.BitmapMovieFrame = 250;
 		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Output bitmap", "%i", (void*)&(P.OutputBitmap), 1, 1, 0)) P.OutputBitmap = 0;
 		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Output bitmap detected", "%i", (void*)&(P.OutputBitmapDetected), 1, 1, 0)) P.OutputBitmapDetected = 0;
@@ -1289,8 +1289,8 @@ void ReadParams(std::string const& ParamFile, std::string const& PreParamFile, s
 		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Divisor for per-capita global threshold (default 1000)", "%i", (void*)&(P.GlobalIncThreshPop), 1, 1, 0)) P.GlobalIncThreshPop = 1000;
 
 		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Number of sampling intervals over which cumulative incidence measured for global trigger", "%i", (void*)&(P.TriggersSamplingInterval), 1, 1, 0)) P.TriggersSamplingInterval = 10000000;
-		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Proportion of cases detected for treatment", "%lf", (void*)&(P.PostAlertControlPropCasesId), 1, 1, 0)) P.PostAlertControlPropCasesId = 1;
-		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Proportion of cases detected before outbreak alert", "%lf", (void*)&(P.PreAlertControlPropCasesId), 1, 1, 0)) P.PreAlertControlPropCasesId = 1.0;
+		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Proportion of cases detected for treatment", "%f", (void*)&(P.PostAlertControlPropCasesId), 1, 1, 0)) P.PostAlertControlPropCasesId = 1;
+		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Proportion of cases detected before outbreak alert", "%f", (void*)&(P.PreAlertControlPropCasesId), 1, 1, 0)) P.PreAlertControlPropCasesId = 1.0;
 		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Trigger alert on deaths", "%i", (void*)&(P.TriggerAlertOnDeaths), 1, 1, 0)) P.TriggerAlertOnDeaths = 0;
 	}
 	if (P.TriggerAlertOnDeaths)
@@ -1304,17 +1304,17 @@ void ReadParams(std::string const& ParamFile, std::string const& PreParamFile, s
 
 	if (P.CaseOrDeathThresholdBeforeAlert_CommandLine > 0) P.CaseOrDeathThresholdBeforeAlert = P.CaseOrDeathThresholdBeforeAlert_CommandLine;
 	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Alert trigger starts after interventions", "%i", (void*)&(P.DoAlertTriggerAfterInterv), 1, 1, 0)) P.DoAlertTriggerAfterInterv = 0;
-	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Day of year trigger is reached", "%lf", (void*)&(P.DateTriggerReached_CalTime), 1, 1, 0)) P.DateTriggerReached_CalTime = -1;
+	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Day of year trigger is reached", "%f", (void*)&(P.DateTriggerReached_CalTime), 1, 1, 0)) P.DateTriggerReached_CalTime = -1;
 	if (P.DoAlertTriggerAfterInterv)
 	{
-		GetInputParameter(ParamFile_dat, PreParamFile_dat, "Day of year interventions start", "%lf", (void*)&(P.Interventions_StartDate_CalTime), 1, 1, 0);
+		GetInputParameter(ParamFile_dat, PreParamFile_dat, "Day of year interventions start", "%f", (void*)&(P.Interventions_StartDate_CalTime), 1, 1, 0);
 		if (P.DateTriggerReached_CalTime <= P.Interventions_StartDate_CalTime)
 			P.DoAlertTriggerAfterInterv = 0;
 		else
 		{
 			P.AlertTriggerAfterIntervThreshold = P.CaseOrDeathThresholdBeforeAlert;
 			P.CaseOrDeathThresholdBeforeAlert = 1000;
-			fprintf(stderr, "Threshold of %i deaths by day %lg\n", P.AlertTriggerAfterIntervThreshold, P.DateTriggerReached_CalTime);
+			fprintf(stderr, "Threshold of %i deaths by day %g\n", P.AlertTriggerAfterIntervThreshold, P.DateTriggerReached_CalTime);
 		}
 	}
 	else
@@ -1330,38 +1330,38 @@ void ReadParams(std::string const& ParamFile, std::string const& PreParamFile, s
 
 	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Only treat mixing groups within places", "%i", (void*) & (P.DoPlaceGroupTreat), 1, 1, 0)) P.DoPlaceGroupTreat = 0;
 
-	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Treatment trigger incidence per cell"				, "%lf", (void*) & (P.TreatCellIncThresh)			, 1, 1, 0)) P.TreatCellIncThresh			= 1000000000;
-	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Case isolation trigger incidence per cell"		, "%lf", (void*) & (P.CaseIsolation_CellIncThresh)	, 1, 1, 0)) P.CaseIsolation_CellIncThresh	= P.TreatCellIncThresh;
-	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Household quarantine trigger incidence per cell"	, "%lf", (void*) & (P.HHQuar_CellIncThresh)			, 1, 1, 0)) P.HHQuar_CellIncThresh			= P.TreatCellIncThresh;
+	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Treatment trigger incidence per cell"				, "%f", (void*) & (P.TreatCellIncThresh)			, 1, 1, 0)) P.TreatCellIncThresh			= 1000000000;
+	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Case isolation trigger incidence per cell"		, "%f", (void*) & (P.CaseIsolation_CellIncThresh)	, 1, 1, 0)) P.CaseIsolation_CellIncThresh	= P.TreatCellIncThresh;
+	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Household quarantine trigger incidence per cell"	, "%f", (void*) & (P.HHQuar_CellIncThresh)			, 1, 1, 0)) P.HHQuar_CellIncThresh			= P.TreatCellIncThresh;
 
-	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Relative susceptibility of treated individual", "%lf", (void*) & (P.TreatSuscDrop), 1, 1, 0)) P.TreatSuscDrop = 1;
-	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Relative infectiousness of treated individual", "%lf", (void*) & (P.TreatInfDrop), 1, 1, 0)) P.TreatInfDrop = 1;
-	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Proportion of symptomatic cases resulting in death prevented by treatment", "%lf", (void*) & (P.TreatDeathDrop), 1, 1, 0)) P.TreatDeathDrop = 0;
-	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Proportion of symptomatic cases prevented by treatment", "%lf", (void*) & (P.TreatSympDrop), 1, 1, 0)) P.TreatSympDrop = 0;
-	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Delay to treat cell", "%lf", (void*) & (P.TreatDelayMean), 1, 1, 0)) P.TreatDelayMean = 0;
-	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Duration of course of treatment", "%lf", (void*) & (P.TreatCaseCourseLength), 1, 1, 0)) P.TreatCaseCourseLength = 5;
-	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Duration of course of prophylaxis", "%lf", (void*) & (P.TreatProphCourseLength), 1, 1, 0)) P.TreatProphCourseLength = 10;
-	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Proportion of detected cases treated", "%lf", (void*) & (P.TreatPropCases), 1, 1, 0)) P.TreatPropCases = 1;
+	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Relative susceptibility of treated individual", "%f", (void*) & (P.TreatSuscDrop), 1, 1, 0)) P.TreatSuscDrop = 1;
+	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Relative infectiousness of treated individual", "%f", (void*) & (P.TreatInfDrop), 1, 1, 0)) P.TreatInfDrop = 1;
+	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Proportion of symptomatic cases resulting in death prevented by treatment", "%f", (void*) & (P.TreatDeathDrop), 1, 1, 0)) P.TreatDeathDrop = 0;
+	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Proportion of symptomatic cases prevented by treatment", "%f", (void*) & (P.TreatSympDrop), 1, 1, 0)) P.TreatSympDrop = 0;
+	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Delay to treat cell", "%f", (void*) & (P.TreatDelayMean), 1, 1, 0)) P.TreatDelayMean = 0;
+	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Duration of course of treatment", "%f", (void*) & (P.TreatCaseCourseLength), 1, 1, 0)) P.TreatCaseCourseLength = 5;
+	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Duration of course of prophylaxis", "%f", (void*) & (P.TreatProphCourseLength), 1, 1, 0)) P.TreatProphCourseLength = 10;
+	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Proportion of detected cases treated", "%f", (void*) & (P.TreatPropCases), 1, 1, 0)) P.TreatPropCases = 1;
 	if (P.DoHouseholds)
 	{
-		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Proportion of households of cases treated", "%lf", (void*) & (P.TreatPropCaseHouseholds), 1, 1, 0)) P.TreatPropCaseHouseholds = 0;
-		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Duration of household prophylaxis policy", "%lf", (void*) & (P.TreatHouseholdsDuration), 1, 1, 0)) P.TreatHouseholdsDuration = USHRT_MAX / P.TimeStepsPerDay;
+		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Proportion of households of cases treated", "%f", (void*) & (P.TreatPropCaseHouseholds), 1, 1, 0)) P.TreatPropCaseHouseholds = 0;
+		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Duration of household prophylaxis policy", "%f", (void*) & (P.TreatHouseholdsDuration), 1, 1, 0)) P.TreatHouseholdsDuration = USHRT_MAX / P.TimeStepsPerDay;
 	}
-	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Proportion treated", "%lf", (void*) & (P.TreatPropRadial), 1, 1, 0)) P.TreatPropRadial = 1.0;
-	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Proportion treated in radial prophylaxis", "%lf", (void*) & (P.TreatPropRadial), 1, 1, 0)) P.TreatPropRadial = 1.0;
-	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Treatment radius", "%lf", (void*) & (P.TreatRadius), 1, 1, 0)) P.TreatRadius = 0;
-	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Duration of place/geographic prophylaxis policy", "%lf", (void*) & (P.TreatPlaceGeogDuration), 1, 1, 0)) P.TreatPlaceGeogDuration = USHRT_MAX / P.TimeStepsPerDay;
-	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Treatment start time", "%lf", (void*) & (P.TreatTimeStartBase), 1, 1, 0)) P.TreatTimeStartBase = USHRT_MAX / P.TimeStepsPerDay;
+	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Proportion treated", "%f", (void*) & (P.TreatPropRadial), 1, 1, 0)) P.TreatPropRadial = 1.0;
+	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Proportion treated in radial prophylaxis", "%f", (void*) & (P.TreatPropRadial), 1, 1, 0)) P.TreatPropRadial = 1.0;
+	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Treatment radius", "%f", (void*) & (P.TreatRadius), 1, 1, 0)) P.TreatRadius = 0;
+	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Duration of place/geographic prophylaxis policy", "%f", (void*) & (P.TreatPlaceGeogDuration), 1, 1, 0)) P.TreatPlaceGeogDuration = USHRT_MAX / P.TimeStepsPerDay;
+	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Treatment start time", "%f", (void*) & (P.TreatTimeStartBase), 1, 1, 0)) P.TreatTimeStartBase = USHRT_MAX / P.TimeStepsPerDay;
 	if (P.DoPlaces)
 	{
-		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Proportion of places treated after case detected", "%lf", (void*)P.TreatPlaceProbCaseId, P.PlaceTypeNum, 1, 0))
+		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Proportion of places treated after case detected", "%f", (void*)P.TreatPlaceProbCaseId, P.PlaceTypeNum, 1, 0))
 			for (i = 0; i < NUM_PLACE_TYPES; i++) P.TreatPlaceProbCaseId[i] = 0;
-		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Proportion of people treated in targeted places", "%lf", (void*)P.TreatPlaceTotalProp, P.PlaceTypeNum, 1, 0))
+		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Proportion of people treated in targeted places", "%f", (void*)P.TreatPlaceTotalProp, P.PlaceTypeNum, 1, 0))
 			for (i = 0; i < NUM_PLACE_TYPES; i++) P.TreatPlaceTotalProp[i] = 0;
 	}
-	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Maximum number of doses available", "%lf", (void*) & (P.TreatMaxCoursesBase), 1, 1, 0)) P.TreatMaxCoursesBase = 1e20;
-	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Start time of additional treatment production", "%lf", (void*) & (P.TreatNewCoursesStartTime), 1, 1, 0)) P.TreatNewCoursesStartTime = USHRT_MAX / P.TimeStepsPerDay;
-	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Rate of additional treatment production (courses per day)", "%lf", (void*) & (P.TreatNewCoursesRate), 1, 1, 0)) P.TreatNewCoursesRate = 0;
+	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Maximum number of doses available", "%f", (void*) & (P.TreatMaxCoursesBase), 1, 1, 0)) P.TreatMaxCoursesBase = 1e20;
+	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Start time of additional treatment production", "%f", (void*) & (P.TreatNewCoursesStartTime), 1, 1, 0)) P.TreatNewCoursesStartTime = USHRT_MAX / P.TimeStepsPerDay;
+	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Rate of additional treatment production (courses per day)", "%f", (void*) & (P.TreatNewCoursesRate), 1, 1, 0)) P.TreatNewCoursesRate = 0;
 	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Maximum number of people targeted with radial prophylaxis per case", "%i", (void*) & (P.TreatMaxCoursesPerCase), 1, 1, 0)) P.TreatMaxCoursesPerCase = 1000000000;
 
 
@@ -1376,40 +1376,40 @@ void ReadParams(std::string const& ParamFile, std::string const& PreParamFile, s
 		P.TreatAdminUnitDivisor = 1; P.TreatByAdminUnit = 0;
 	}
 
-	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Vaccination trigger incidence per cell", "%lf", (void*) & (P.VaccCellIncThresh), 1, 1, 0)) P.VaccCellIncThresh = 1000000000;
-	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Relative susceptibility of vaccinated individual", "%lf", (void*) & (P.VaccSuscDrop), 1, 1, 0)) P.VaccSuscDrop = 1;
-	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Relative susceptibility of individual vaccinated after switch time", "%lf", (void*) & (P.VaccSuscDrop2), 1, 1, 0)) P.VaccSuscDrop2 = 1;
-	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Switch time at which vaccine efficacy increases", "%lf", (void*) & (P.VaccTimeEfficacySwitch), 1, 1, 0)) P.VaccTimeEfficacySwitch = USHRT_MAX / P.TimeStepsPerDay;
-	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Decay rate of vaccine efficacy (per year)", "%lf", (void*) & (P.VaccEfficacyDecay), 1, 1, 0)) P.VaccEfficacyDecay = 0;
+	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Vaccination trigger incidence per cell", "%f", (void*) & (P.VaccCellIncThresh), 1, 1, 0)) P.VaccCellIncThresh = 1000000000;
+	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Relative susceptibility of vaccinated individual", "%f", (void*) & (P.VaccSuscDrop), 1, 1, 0)) P.VaccSuscDrop = 1;
+	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Relative susceptibility of individual vaccinated after switch time", "%f", (void*) & (P.VaccSuscDrop2), 1, 1, 0)) P.VaccSuscDrop2 = 1;
+	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Switch time at which vaccine efficacy increases", "%f", (void*) & (P.VaccTimeEfficacySwitch), 1, 1, 0)) P.VaccTimeEfficacySwitch = USHRT_MAX / P.TimeStepsPerDay;
+	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Decay rate of vaccine efficacy (per year)", "%f", (void*) & (P.VaccEfficacyDecay), 1, 1, 0)) P.VaccEfficacyDecay = 0;
 	P.VaccEfficacyDecay /= DAYS_PER_YEAR;
-	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Relative infectiousness of vaccinated individual", "%lf", (void*) & (P.VaccInfDrop), 1, 1, 0)) P.VaccInfDrop = 1;
-	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Proportion of symptomatic cases resulting in death prevented by vaccination", "%lf", (void*) & (P.VaccMortDrop), 1, 1, 0)) P.VaccMortDrop = 0;
-	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Proportion of symptomatic cases prevented by vaccination", "%lf", (void*) & (P.VaccSympDrop), 1, 1, 0)) P.VaccSympDrop = 0;
-	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Delay to vaccinate", "%lf", (void*) & (P.VaccDelayMean), 1, 1, 0)) P.VaccDelayMean = 0;
+	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Relative infectiousness of vaccinated individual", "%f", (void*) & (P.VaccInfDrop), 1, 1, 0)) P.VaccInfDrop = 1;
+	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Proportion of symptomatic cases resulting in death prevented by vaccination", "%f", (void*) & (P.VaccMortDrop), 1, 1, 0)) P.VaccMortDrop = 0;
+	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Proportion of symptomatic cases prevented by vaccination", "%f", (void*) & (P.VaccSympDrop), 1, 1, 0)) P.VaccSympDrop = 0;
+	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Delay to vaccinate", "%f", (void*) & (P.VaccDelayMean), 1, 1, 0)) P.VaccDelayMean = 0;
 
-	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Delay from vaccination to full protection", "%lf", (void*) & (P.VaccTimeToEfficacy), 1, 1, 0)) P.VaccTimeToEfficacy = 0;
+	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Delay from vaccination to full protection", "%f", (void*) & (P.VaccTimeToEfficacy), 1, 1, 0)) P.VaccTimeToEfficacy = 0;
 
-	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Years between rounds of vaccination", "%lf", (void*) & (P.VaccCampaignInterval), 1, 1, 0)) P.VaccCampaignInterval = 1e10;
+	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Years between rounds of vaccination", "%f", (void*) & (P.VaccCampaignInterval), 1, 1, 0)) P.VaccCampaignInterval = 1e10;
 	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Max vaccine doses per day", "%i", (void*) & (P.VaccDosePerDay), 1, 1, 0)) P.VaccDosePerDay = -1;
 	P.VaccCampaignInterval *= DAYS_PER_YEAR;
 	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Maximum number of rounds of vaccination", "%i", (void*) & (P.VaccMaxRounds), 1, 1, 0)) P.VaccMaxRounds = 1;
 	if (P.DoHouseholds)
 	{
-		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Proportion of households of cases vaccinated", "%lf", (void*) & (P.VaccPropCaseHouseholds), 1, 1, 0)) P.VaccPropCaseHouseholds = 0;
-		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Duration of household vaccination policy", "%lf", (void*) & (P.VaccHouseholdsDuration), 1, 1, 0)) P.VaccHouseholdsDuration = USHRT_MAX / P.TimeStepsPerDay;
+		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Proportion of households of cases vaccinated", "%f", (void*) & (P.VaccPropCaseHouseholds), 1, 1, 0)) P.VaccPropCaseHouseholds = 0;
+		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Duration of household vaccination policy", "%f", (void*) & (P.VaccHouseholdsDuration), 1, 1, 0)) P.VaccHouseholdsDuration = USHRT_MAX / P.TimeStepsPerDay;
 	}
 
-	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Vaccination start time", "%lf", (void*) & (P.VaccTimeStartBase), 1, 1, 0)) P.VaccTimeStartBase = USHRT_MAX / P.TimeStepsPerDay;
-	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Proportion of population vaccinated", "%lf", (void*) & (P.VaccProp), 1, 1, 0)) P.VaccProp = 0;
-	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Time taken to reach max vaccination coverage (in years)", "%lf", (void*) & (P.VaccCoverageIncreasePeriod), 1, 1, 0)) P.VaccCoverageIncreasePeriod = 0;
+	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Vaccination start time", "%f", (void*) & (P.VaccTimeStartBase), 1, 1, 0)) P.VaccTimeStartBase = USHRT_MAX / P.TimeStepsPerDay;
+	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Proportion of population vaccinated", "%f", (void*) & (P.VaccProp), 1, 1, 0)) P.VaccProp = 0;
+	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Time taken to reach max vaccination coverage (in years)", "%f", (void*) & (P.VaccCoverageIncreasePeriod), 1, 1, 0)) P.VaccCoverageIncreasePeriod = 0;
 	P.VaccCoverageIncreasePeriod *= DAYS_PER_YEAR;
-	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Time to start geographic vaccination", "%lf", (void*) & (P.VaccTimeStartGeo), 1, 1, 0)) P.VaccTimeStartGeo = 1e10;
-	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Vaccination radius", "%lf", (void*) & (P.VaccRadius), 1, 1, 0)) P.VaccRadius = 0;
-	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Minimum radius from case to vaccinate", "%lf", (void*) & (P.VaccMinRadius), 1, 1, 0)) P.VaccMinRadius = 0;
-	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Maximum number of vaccine courses available", "%lf", (void*) & (P.VaccMaxCoursesBase), 1, 1, 0)) P.VaccMaxCoursesBase = 1e20;
-	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Start time of additional vaccine production", "%lf", (void*) & (P.VaccNewCoursesStartTime), 1, 1, 0)) P.VaccNewCoursesStartTime = USHRT_MAX / P.TimeStepsPerDay;
-	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "End time of additional vaccine production", "%lf", (void*) & (P.VaccNewCoursesEndTime), 1, 1, 0)) P.VaccNewCoursesEndTime = USHRT_MAX / P.TimeStepsPerDay;
-	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Rate of additional vaccine production (courses per day)", "%lf", (void*) & (P.VaccNewCoursesRate), 1, 1, 0)) P.VaccNewCoursesRate = 0;
+	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Time to start geographic vaccination", "%f", (void*) & (P.VaccTimeStartGeo), 1, 1, 0)) P.VaccTimeStartGeo = 1e10;
+	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Vaccination radius", "%f", (void*) & (P.VaccRadius), 1, 1, 0)) P.VaccRadius = 0;
+	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Minimum radius from case to vaccinate", "%f", (void*) & (P.VaccMinRadius), 1, 1, 0)) P.VaccMinRadius = 0;
+	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Maximum number of vaccine courses available", "%f", (void*) & (P.VaccMaxCoursesBase), 1, 1, 0)) P.VaccMaxCoursesBase = 1e20;
+	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Start time of additional vaccine production", "%f", (void*) & (P.VaccNewCoursesStartTime), 1, 1, 0)) P.VaccNewCoursesStartTime = USHRT_MAX / P.TimeStepsPerDay;
+	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "End time of additional vaccine production", "%f", (void*) & (P.VaccNewCoursesEndTime), 1, 1, 0)) P.VaccNewCoursesEndTime = USHRT_MAX / P.TimeStepsPerDay;
+	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Rate of additional vaccine production (courses per day)", "%f", (void*) & (P.VaccNewCoursesRate), 1, 1, 0)) P.VaccNewCoursesRate = 0;
 	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Apply mass rather than reactive vaccination", "%i", (void*) & (P.DoMassVacc), 1, 1, 0)) P.DoMassVacc = 0;
 	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Priority age range for mass vaccination", "%i", (void*)P.VaccPriorityGroupAge, 2, 1, 0)) { P.VaccPriorityGroupAge[0] = 1; P.VaccPriorityGroupAge[1] = 0; }
 	if (P.DoAdUnits)
@@ -1424,11 +1424,11 @@ void ReadParams(std::string const& ParamFile, std::string const& PreParamFile, s
 	}
 
 	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Movement restrictions trigger incidence per cell", "%i", (void*) & (P.MoveRestrCellIncThresh), 1, 1, 0)) P.MoveRestrCellIncThresh = 1000000000;
-	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Delay to start movement restrictions", "%lf", (void*) & (P.MoveDelayMean), 1, 1, 0)) P.MoveDelayMean = 0;
-	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Duration of movement restrictions", "%lf", (void*) & (P.MoveRestrDuration), 1, 1, 0)) P.MoveRestrDuration = 7;
-	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Residual movements after restrictions", "%lf", (void*) & (P.MoveRestrEffect), 1, 1, 0)) P.MoveRestrEffect = 0;
-	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Minimum radius of movement restrictions", "%lf", (void*) & (P.MoveRestrRadius), 1, 1, 0)) P.MoveRestrRadius = 0;
-	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Movement restrictions start time", "%lf", (void*) & (P.MoveRestrTimeStartBase), 1, 1, 0)) P.MoveRestrTimeStartBase = USHRT_MAX / P.TimeStepsPerDay;
+	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Delay to start movement restrictions", "%f", (void*) & (P.MoveDelayMean), 1, 1, 0)) P.MoveDelayMean = 0;
+	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Duration of movement restrictions", "%f", (void*) & (P.MoveRestrDuration), 1, 1, 0)) P.MoveRestrDuration = 7;
+	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Residual movements after restrictions", "%f", (void*) & (P.MoveRestrEffect), 1, 1, 0)) P.MoveRestrEffect = 0;
+	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Minimum radius of movement restrictions", "%f", (void*) & (P.MoveRestrRadius), 1, 1, 0)) P.MoveRestrRadius = 0;
+	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Movement restrictions start time", "%f", (void*) & (P.MoveRestrTimeStartBase), 1, 1, 0)) P.MoveRestrTimeStartBase = USHRT_MAX / P.TimeStepsPerDay;
 	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Impose blanket movement restrictions", "%i", (void*) & (P.DoBlanketMoveRestr), 1, 1, 0)) P.DoBlanketMoveRestr = 0;
 	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Movement restrictions only once", "%i", (void*) & (P.DoMoveRestrOnceOnly), 1, 1, 0)) P.DoMoveRestrOnceOnly = 0;
 	if (P.DoMoveRestrOnceOnly) P.DoMoveRestrOnceOnly = 4;
@@ -1448,23 +1448,23 @@ void ReadParams(std::string const& ParamFile, std::string const& PreParamFile, s
 	if (P.DoInterventionDelaysByAdUnit)
 	{
 		//Set up arrays to temporarily store parameters per admin unit
-		double AdunitDelayToSocialDistance	[MAX_ADUNITS];
-		double AdunitDelayToHQuarantine		[MAX_ADUNITS];
-		double AdunitDelayToCaseIsolation	[MAX_ADUNITS];
-		double AdunitDelayToPlaceClose		[MAX_ADUNITS];
-		double AdunitDurationSocialDistance	[MAX_ADUNITS];
-		double AdunitDurationHQuarantine	[MAX_ADUNITS];
-		double AdunitDurationCaseIsolation	[MAX_ADUNITS];
-		double AdunitDurationPlaceClose		[MAX_ADUNITS];
+		float AdunitDelayToSocialDistance	[MAX_ADUNITS];
+		float AdunitDelayToHQuarantine		[MAX_ADUNITS];
+		float AdunitDelayToCaseIsolation	[MAX_ADUNITS];
+		float AdunitDelayToPlaceClose		[MAX_ADUNITS];
+		float AdunitDurationSocialDistance	[MAX_ADUNITS];
+		float AdunitDurationHQuarantine	[MAX_ADUNITS];
+		float AdunitDurationCaseIsolation	[MAX_ADUNITS];
+		float AdunitDurationPlaceClose		[MAX_ADUNITS];
 
-		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Delay to social distancing by admin unit"			, "%lf", (void*)AdunitDelayToSocialDistance	, P.NumAdunits, 1, 0)) for (i = 0; i < P.NumAdunits; i++) AdunitDelayToSocialDistance	[i] = 0;
-		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Delay to household quarantine by admin unit"		, "%lf", (void*)AdunitDelayToHQuarantine	, P.NumAdunits, 1, 0)) for (i = 0; i < P.NumAdunits; i++) AdunitDelayToHQuarantine		[i] = 0;
-		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Delay to case isolation by admin unit"			, "%lf", (void*)AdunitDelayToCaseIsolation	, P.NumAdunits, 1, 0)) for (i = 0; i < P.NumAdunits; i++) AdunitDelayToCaseIsolation	[i] = 0;
-		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Delay to place closure by admin unit"				, "%lf", (void*)AdunitDelayToPlaceClose		, P.NumAdunits, 1, 0)) for (i = 0; i < P.NumAdunits; i++) AdunitDelayToPlaceClose		[i] = 0;
-		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Duration of social distancing by admin unit"		, "%lf", (void*)AdunitDurationSocialDistance, P.NumAdunits, 1, 0)) for (i = 0; i < P.NumAdunits; i++) AdunitDurationSocialDistance	[i] = 0;
-		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Duration of household quarantine by admin unit"	, "%lf", (void*)AdunitDurationHQuarantine	, P.NumAdunits, 1, 0)) for (i = 0; i < P.NumAdunits; i++) AdunitDurationHQuarantine		[i] = 0;
-		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Duration of case isolation by admin unit"			, "%lf", (void*)AdunitDurationCaseIsolation	, P.NumAdunits, 1, 0)) for (i = 0; i < P.NumAdunits; i++) AdunitDurationCaseIsolation	[i] = 0;
-		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Duration of place closure by admin unit"			, "%lf", (void*)AdunitDurationPlaceClose	, P.NumAdunits, 1, 0)) for (i = 0; i < P.NumAdunits; i++) AdunitDurationPlaceClose		[i] = 0;
+		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Delay to social distancing by admin unit"			, "%f", (void*)AdunitDelayToSocialDistance	, P.NumAdunits, 1, 0)) for (i = 0; i < P.NumAdunits; i++) AdunitDelayToSocialDistance	[i] = 0;
+		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Delay to household quarantine by admin unit"		, "%f", (void*)AdunitDelayToHQuarantine	, P.NumAdunits, 1, 0)) for (i = 0; i < P.NumAdunits; i++) AdunitDelayToHQuarantine		[i] = 0;
+		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Delay to case isolation by admin unit"			, "%f", (void*)AdunitDelayToCaseIsolation	, P.NumAdunits, 1, 0)) for (i = 0; i < P.NumAdunits; i++) AdunitDelayToCaseIsolation	[i] = 0;
+		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Delay to place closure by admin unit"				, "%f", (void*)AdunitDelayToPlaceClose		, P.NumAdunits, 1, 0)) for (i = 0; i < P.NumAdunits; i++) AdunitDelayToPlaceClose		[i] = 0;
+		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Duration of social distancing by admin unit"		, "%f", (void*)AdunitDurationSocialDistance, P.NumAdunits, 1, 0)) for (i = 0; i < P.NumAdunits; i++) AdunitDurationSocialDistance	[i] = 0;
+		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Duration of household quarantine by admin unit"	, "%f", (void*)AdunitDurationHQuarantine	, P.NumAdunits, 1, 0)) for (i = 0; i < P.NumAdunits; i++) AdunitDurationHQuarantine		[i] = 0;
+		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Duration of case isolation by admin unit"			, "%f", (void*)AdunitDurationCaseIsolation	, P.NumAdunits, 1, 0)) for (i = 0; i < P.NumAdunits; i++) AdunitDurationCaseIsolation	[i] = 0;
+		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Duration of place closure by admin unit"			, "%f", (void*)AdunitDurationPlaceClose	, P.NumAdunits, 1, 0)) for (i = 0; i < P.NumAdunits; i++) AdunitDurationPlaceClose		[i] = 0;
 
 		for (i = 0; i < P.NumAdunits; i++)
 		{
@@ -1487,10 +1487,10 @@ void ReadParams(std::string const& ParamFile, std::string const& PreParamFile, s
 	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Include digital contact tracing", "%i", (void*) & (P.DoDigitalContactTracing), 1, 1, 0)) P.DoDigitalContactTracing = 0;
 	if (P.DoDigitalContactTracing)
 	{
-		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Digital contact tracing trigger incidence per cell", "%lf", (void*) & (P.DigitalContactTracing_CellIncThresh), 1, 1, 0)) P.DigitalContactTracing_CellIncThresh = 1000000000;
+		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Digital contact tracing trigger incidence per cell", "%f", (void*) & (P.DigitalContactTracing_CellIncThresh), 1, 1, 0)) P.DigitalContactTracing_CellIncThresh = 1000000000;
 
-		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Proportion of population or households covered by digital contact tracing", "%lf", (void*) & (P.PropPopUsingDigitalContactTracing), 1, 1, 0)) P.PropPopUsingDigitalContactTracing = 1;
-		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Proportion of smartphone users by age", "%lf", (void*)P.ProportionSmartphoneUsersByAge, NUM_AGE_GROUPS, 1, 0))
+		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Proportion of population or households covered by digital contact tracing", "%f", (void*) & (P.PropPopUsingDigitalContactTracing), 1, 1, 0)) P.PropPopUsingDigitalContactTracing = 1;
+		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Proportion of smartphone users by age", "%f", (void*)P.ProportionSmartphoneUsersByAge, NUM_AGE_GROUPS, 1, 0))
 		{
 			for (i = 0; i < NUM_AGE_GROUPS; i++)
 			{
@@ -1505,26 +1505,26 @@ void ReadParams(std::string const& ParamFile, std::string const& PreParamFile, s
 		{
 			P.ClusterDigitalContactUsers = 0;
 		}
-		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Proportion of digital contacts who self-isolate", "%lf", (void*) & (P.ProportionDigitalContactsIsolate), 1, 1, 0)) P.ProportionDigitalContactsIsolate = 0;
+		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Proportion of digital contacts who self-isolate", "%f", (void*) & (P.ProportionDigitalContactsIsolate), 1, 1, 0)) P.ProportionDigitalContactsIsolate = 0;
 		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Maximum number of contacts to trace per index case", "%i", (void*)&(P.MaxDigitalContactsToTrace), 1, 1, 0)) P.MaxDigitalContactsToTrace = MAX_CONTACTS;
-		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Delay between isolation of index case and contacts", "%lf", (void*) & (P.DigitalContactTracingDelay), 1, 1, 0)) P.DigitalContactTracingDelay = P.TimeStep;
+		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Delay between isolation of index case and contacts", "%f", (void*) & (P.DigitalContactTracingDelay), 1, 1, 0)) P.DigitalContactTracingDelay = P.TimeStep;
 		//we really need one timestep between to make sure contact is not processed before index
 		if (P.DigitalContactTracingDelay == 0) P.DigitalContactTracingDelay = P.TimeStep;
-		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Length of self-isolation for digital contacts", "%lf", (void*) & (P.LengthDigitalContactIsolation), 1, 1, 0)) P.LengthDigitalContactIsolation = 0;
-		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Spatial scaling factor - digital contact tracing", "%lf", (void*) & (P.ScalingFactorSpatialDigitalContacts), 1, 1, 0)) P.ScalingFactorSpatialDigitalContacts = 1;
-		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Place scaling factor - digital contact tracing", "%lf", (void*)&(P.ScalingFactorPlaceDigitalContacts), 1, 1, 0)) P.ScalingFactorPlaceDigitalContacts = 1;
-		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Digital contact tracing start time", "%lf", (void*) & (P.DigitalContactTracingTimeStartBase), 1, 1, 0)) P.DigitalContactTracingTimeStartBase = USHRT_MAX / P.TimeStepsPerDay;
-		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Duration of digital contact tracing policy", "%lf", (void*) & (P.DigitalContactTracingPolicyDuration), 1, 1, 0)) P.DigitalContactTracingPolicyDuration = 7;
+		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Length of self-isolation for digital contacts", "%f", (void*) & (P.LengthDigitalContactIsolation), 1, 1, 0)) P.LengthDigitalContactIsolation = 0;
+		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Spatial scaling factor - digital contact tracing", "%f", (void*) & (P.ScalingFactorSpatialDigitalContacts), 1, 1, 0)) P.ScalingFactorSpatialDigitalContacts = 1;
+		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Place scaling factor - digital contact tracing", "%f", (void*)&(P.ScalingFactorPlaceDigitalContacts), 1, 1, 0)) P.ScalingFactorPlaceDigitalContacts = 1;
+		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Digital contact tracing start time", "%f", (void*) & (P.DigitalContactTracingTimeStartBase), 1, 1, 0)) P.DigitalContactTracingTimeStartBase = USHRT_MAX / P.TimeStepsPerDay;
+		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Duration of digital contact tracing policy", "%f", (void*) & (P.DigitalContactTracingPolicyDuration), 1, 1, 0)) P.DigitalContactTracingPolicyDuration = 7;
 		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Output digital contact tracing", "%i", (void*) & (P.OutputDigitalContactTracing), 1, 1, 0)) P.OutputDigitalContactTracing = 0;
 		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Output digital contact distribution", "%i", (void*)&(P.OutputDigitalContactDist), 1, 1, 0)) P.OutputDigitalContactDist = 0;
 
 		if (P.DoInterventionDelaysByAdUnit)
 		{
-			double AdunitDelayToDCT[MAX_ADUNITS];
-			double AdunitDurationDCT[MAX_ADUNITS];
+			float AdunitDelayToDCT[MAX_ADUNITS];
+			float AdunitDurationDCT[MAX_ADUNITS];
 
-			if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Delay to digital contact tracing by admin unit", "%lf", (void*)AdunitDelayToDCT, P.NumAdunits, 1, 0)) for (i = 0; i < P.NumAdunits; i++) AdunitDelayToDCT[i] = 0;
-			if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Duration of digital contact tracing by admin unit", "%lf", (void*)AdunitDurationDCT, P.NumAdunits, 1, 0)) for (i = 0; i < P.NumAdunits; i++) AdunitDurationDCT[i] = 0;
+			if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Delay to digital contact tracing by admin unit", "%f", (void*)AdunitDelayToDCT, P.NumAdunits, 1, 0)) for (i = 0; i < P.NumAdunits; i++) AdunitDelayToDCT[i] = 0;
+			if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Duration of digital contact tracing by admin unit", "%f", (void*)AdunitDurationDCT, P.NumAdunits, 1, 0)) for (i = 0; i < P.NumAdunits; i++) AdunitDurationDCT[i] = 0;
 			for (i = 0; i < P.NumAdunits; i++)
 			{
 				AdUnits[i].DCTDelay = AdunitDelayToDCT[i];
@@ -1532,18 +1532,18 @@ void ReadParams(std::string const& ParamFile, std::string const& PreParamFile, s
 			}
 		}
 		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Isolate index cases in digital contact tracing", "%i", (void*)&(P.DCTIsolateIndexCases), 1, 1, 0)) P.DCTIsolateIndexCases = 1;
-		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Residual contacts after digital contact tracing isolation", "%lf", (void*)&(P.DCTCaseIsolationEffectiveness), 1, 1, 0)) P.DCTCaseIsolationEffectiveness = P.CaseIsolationEffectiveness;
-		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Residual household contacts after digital contact tracing isolation", "%lf", (void*)&(P.DCTCaseIsolationHouseEffectiveness), 1, 1, 0)) P.DCTCaseIsolationHouseEffectiveness = P.CaseIsolationHouseEffectiveness;
+		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Residual contacts after digital contact tracing isolation", "%f", (void*)&(P.DCTCaseIsolationEffectiveness), 1, 1, 0)) P.DCTCaseIsolationEffectiveness = P.CaseIsolationEffectiveness;
+		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Residual household contacts after digital contact tracing isolation", "%f", (void*)&(P.DCTCaseIsolationHouseEffectiveness), 1, 1, 0)) P.DCTCaseIsolationHouseEffectiveness = P.CaseIsolationHouseEffectiveness;
 		//initialise total number of users to 0
 		P.NDigitalContactUsers = 0;
 		P.NDigitalHouseholdUsers = 0;
 
-		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Delay between symptom onset and isolation for index case", "%lf", (void*)&(P.DelayFromIndexCaseDetectionToDCTIsolation), 1, 1, 0)) P.DelayFromIndexCaseDetectionToDCTIsolation = 0;
+		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Delay between symptom onset and isolation for index case", "%f", (void*)&(P.DelayFromIndexCaseDetectionToDCTIsolation), 1, 1, 0)) P.DelayFromIndexCaseDetectionToDCTIsolation = 0;
 		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Test index cases and contacts", "%i", (void*)&(P.DoDCTTest), 1, 1, 0)) P.DoDCTTest = 0;
-		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Delay to test index case", "%lf", (void*)&(P.DelayToTestIndexCase), 1, 1, 0)) P.DelayToTestIndexCase = 1;
-		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Delay to test DCT contacts", "%lf", (void*)&(P.DelayToTestDCTContacts), 1, 1, 0)) P.DelayToTestDCTContacts = 7;
-		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Testing specificity - DCT", "%lf", (void*)&(P.SpecificityDCT), 1, 1, 0)) P.SpecificityDCT = 1;
-		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Testing sensitivity - DCT", "%lf", (void*)&(P.SensitivityDCT), 1, 1, 0)) P.SensitivityDCT = 1;
+		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Delay to test index case", "%f", (void*)&(P.DelayToTestIndexCase), 1, 1, 0)) P.DelayToTestIndexCase = 1;
+		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Delay to test DCT contacts", "%f", (void*)&(P.DelayToTestDCTContacts), 1, 1, 0)) P.DelayToTestDCTContacts = 7;
+		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Testing specificity - DCT", "%f", (void*)&(P.SpecificityDCT), 1, 1, 0)) P.SpecificityDCT = 1;
+		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Testing sensitivity - DCT", "%f", (void*)&(P.SensitivityDCT), 1, 1, 0)) P.SensitivityDCT = 1;
 		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Find contacts of digital contacts", "%i", (void*)&(P.FindContactsOfDCTContacts), 1, 1, 0)) P.FindContactsOfDCTContacts = 0;
 		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Remove contacts of a negative index case", "%i", (void*)&(P.RemoveContactsOfNegativeIndexCase), 1, 1, 0)) P.RemoveContactsOfNegativeIndexCase = 0;
 	}
@@ -1565,51 +1565,51 @@ void ReadParams(std::string const& ParamFile, std::string const& PreParamFile, s
 	if (P.PlaceCloseCellIncThresh1 < 0) P.PlaceCloseCellIncThresh1 = 1000000000;
 	if (P.PlaceCloseCellIncThresh2 < 0) P.PlaceCloseCellIncThresh2 = 1000000000;
 	if(!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Trigger incidence per cell for end of place closure", "%i", (void*) & (P.PlaceCloseCellIncStopThresh), 1, 1, 0)) P.PlaceCloseCellIncStopThresh = 0;
-	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Delay to start place closure", "%lf", (void*) & (P.PlaceCloseDelayMean), 1, 1, 0)) P.PlaceCloseDelayMean = 0;
-	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Duration of place closure", "%lf", (void*) & (P.PlaceCloseDurationBase), 1, 1, 0)) P.PlaceCloseDurationBase = 7;
-	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Duration of second place closure", "%lf", (void*) & (P.PlaceCloseDuration2), 1, 1, 0)) P.PlaceCloseDuration2 = 7;
+	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Delay to start place closure", "%f", (void*) & (P.PlaceCloseDelayMean), 1, 1, 0)) P.PlaceCloseDelayMean = 0;
+	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Duration of place closure", "%f", (void*) & (P.PlaceCloseDurationBase), 1, 1, 0)) P.PlaceCloseDurationBase = 7;
+	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Duration of second place closure", "%f", (void*) & (P.PlaceCloseDuration2), 1, 1, 0)) P.PlaceCloseDuration2 = 7;
 	if (P.DoPlaces)
 	{
-		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Proportion of places remaining open after closure by place type", "%lf", (void*)P.PlaceCloseEffect, P.PlaceTypeNum, 1, 0))
+		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Proportion of places remaining open after closure by place type", "%f", (void*)P.PlaceCloseEffect, P.PlaceTypeNum, 1, 0))
 			for (i = 0; i < NUM_PLACE_TYPES; i++) P.PlaceCloseEffect[i] = 1;
-		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Proportional attendance after closure by place type", "%lf", (void*)P.PlaceClosePropAttending, P.PlaceTypeNum, 1, 0))
+		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Proportional attendance after closure by place type", "%f", (void*)P.PlaceClosePropAttending, P.PlaceTypeNum, 1, 0))
 			for (i = 0; i < NUM_PLACE_TYPES; i++) P.PlaceClosePropAttending[i] = 0;
 	}
 	if (P.DoHouseholds)
-		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Relative household contact rate after closure", "%lf", (void*)& P.PlaceCloseHouseholdRelContact, 1, 1, 0)) P.PlaceCloseHouseholdRelContact = 1;
-	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Relative spatial contact rate after closure", "%lf", (void*)& P.PlaceCloseSpatialRelContact, 1, 1, 0)) P.PlaceCloseSpatialRelContact = 1;
+		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Relative household contact rate after closure", "%f", (void*)& P.PlaceCloseHouseholdRelContact, 1, 1, 0)) P.PlaceCloseHouseholdRelContact = 1;
+	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Relative spatial contact rate after closure", "%f", (void*)& P.PlaceCloseSpatialRelContact, 1, 1, 0)) P.PlaceCloseSpatialRelContact = 1;
 
 	if (!GetInputParameter2(PreParamFile_dat, AdminFile_dat, "Include holidays", "%i", (void*) & (P.DoHolidays), 1, 1, 0)) P.DoHolidays = 0;
 	if (P.DoHolidays)
 	{
-		if (!GetInputParameter2(PreParamFile_dat, AdminFile_dat, "Proportion of places remaining open during holidays by place type", "%lf", (void*)P.HolidayEffect, P.PlaceTypeNum, 1, 0))
+		if (!GetInputParameter2(PreParamFile_dat, AdminFile_dat, "Proportion of places remaining open during holidays by place type", "%f", (void*)P.HolidayEffect, P.PlaceTypeNum, 1, 0))
 			for (i = 0; i < NUM_PLACE_TYPES; i++) P.HolidayEffect[i] = 1;
 		if (!GetInputParameter2(PreParamFile_dat, AdminFile_dat, "Number of holidays", "%i", (void*) & (P.NumHolidays), 1, 1, 0)) P.NumHolidays = 0;
 		if (P.NumHolidays > DAYS_PER_YEAR) P.NumHolidays = DAYS_PER_YEAR;
 		if (P.NumHolidays > 0)
 		{
-			GetInputParameter(PreParamFile_dat, AdminFile_dat, "Holiday start times", "%lf", (void*)P.HolidayStartTime, P.NumHolidays, 1, 0);
-			GetInputParameter(PreParamFile_dat, AdminFile_dat, "Holiday durations", "%lf", (void*)P.HolidayDuration, P.NumHolidays, 1, 0);
+			GetInputParameter(PreParamFile_dat, AdminFile_dat, "Holiday start times", "%f", (void*)P.HolidayStartTime, P.NumHolidays, 1, 0);
+			GetInputParameter(PreParamFile_dat, AdminFile_dat, "Holiday durations", "%f", (void*)P.HolidayDuration, P.NumHolidays, 1, 0);
 		}
 	}
 	else
 		P.NumHolidays = 0;
-	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Minimum radius for place closure", "%lf", (void*) & (P.PlaceCloseRadius), 1, 1, 0)) P.PlaceCloseRadius = 0;
-	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Place closure start time", "%lf", (void*) & (P.PlaceCloseTimeStartBase), 1, 1, 0)) P.PlaceCloseTimeStartBase = USHRT_MAX / P.TimeStepsPerDay;
-	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Place closure second start time", "%lf", (void*) & (P.PlaceCloseTimeStartBase2), 1, 1, 0)) P.PlaceCloseTimeStartBase2 = USHRT_MAX / P.TimeStepsPerDay;
+	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Minimum radius for place closure", "%f", (void*) & (P.PlaceCloseRadius), 1, 1, 0)) P.PlaceCloseRadius = 0;
+	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Place closure start time", "%f", (void*) & (P.PlaceCloseTimeStartBase), 1, 1, 0)) P.PlaceCloseTimeStartBase = USHRT_MAX / P.TimeStepsPerDay;
+	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Place closure second start time", "%f", (void*) & (P.PlaceCloseTimeStartBase2), 1, 1, 0)) P.PlaceCloseTimeStartBase2 = USHRT_MAX / P.TimeStepsPerDay;
 	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Places close only once", "%i", (void*) & (P.DoPlaceCloseOnceOnly), 1, 1, 0)) P.DoPlaceCloseOnceOnly = 0;
 	if (P.DoPlaceCloseOnceOnly) P.DoPlaceCloseOnceOnly = 4;
 	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Place closure incidence threshold", "%i", (void*) & (P.PlaceCloseIncTrig1), 1, 1, 0)) P.PlaceCloseIncTrig1 = 1;
 	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Place closure second incidence threshold", "%i", (void*)&(P.PlaceCloseIncTrig2), 1, 1, 0)) P.PlaceCloseIncTrig2 = P.PlaceCloseIncTrig1;
-	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Place closure fractional incidence threshold", "%lf", (void*) & (P.PlaceCloseFracIncTrig), 1, 1, 0)) P.PlaceCloseFracIncTrig = 0;
+	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Place closure fractional incidence threshold", "%f", (void*) & (P.PlaceCloseFracIncTrig), 1, 1, 0)) P.PlaceCloseFracIncTrig = 0;
 	if ((P.DoAdUnits) && (P.DoPlaces))
 	{
 		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Place closure in administrative units rather than rings", "%i", (void*) & (P.PlaceCloseByAdminUnit), 1, 1, 0)) P.PlaceCloseByAdminUnit = 0;
 		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Administrative unit divisor for place closure", "%i", (void*) & (P.PlaceCloseAdminUnitDivisor), 1, 1, 0)) P.PlaceCloseAdminUnitDivisor = 1;
 		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Place types to close for admin unit closure (0/1 array)", "%i", (void*) & (P.PlaceCloseAdunitPlaceTypes), P.PlaceTypeNum, 1, 0))
 			for (i = 0; i < P.PlaceTypeNum; i++) P.PlaceCloseAdunitPlaceTypes[i] = 0;
-		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Cumulative proportion of place members needing to become sick for admin unit closure", "%lf", (void*) & (P.PlaceCloseCasePropThresh), 1, 1, 0)) P.PlaceCloseCasePropThresh = 2;
-		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Proportion of places in admin unit needing to pass threshold for place closure", "%lf", (void*) & (P.PlaceCloseAdunitPropThresh), 1, 1, 0)) P.PlaceCloseAdunitPropThresh = 2;
+		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Cumulative proportion of place members needing to become sick for admin unit closure", "%f", (void*) & (P.PlaceCloseCasePropThresh), 1, 1, 0)) P.PlaceCloseCasePropThresh = 2;
+		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Proportion of places in admin unit needing to pass threshold for place closure", "%f", (void*) & (P.PlaceCloseAdunitPropThresh), 1, 1, 0)) P.PlaceCloseAdunitPropThresh = 2;
 		if ((P.PlaceCloseAdminUnitDivisor < 1) || (P.PlaceCloseByAdminUnit == 0)) P.PlaceCloseAdminUnitDivisor = 1;
 	}
 	else
@@ -1623,50 +1623,50 @@ void ReadParams(std::string const& ParamFile, std::string const& PreParamFile, s
 
 	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Trigger incidence per cell for social distancing", "%i", (void*) & (P.SocDistCellIncThresh), 1, 1, 0)) P.SocDistCellIncThresh = 1000000000;
 	if(!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Trigger incidence per cell for end of social distancing", "%i", (void*) & (P.SocDistCellIncStopThresh), 1, 1, 0)) P.SocDistCellIncStopThresh = 0;
-	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Duration of social distancing", "%lf", (void*) & (P.SocDistDuration), 1, 1, 0)) P.SocDistDuration = 7;
-	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Duration of social distancing after change", "%lf", (void*) & (P.SocDistDuration2), 1, 1, 0)) P.SocDistDuration2 = 7;
+	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Duration of social distancing", "%f", (void*) & (P.SocDistDuration), 1, 1, 0)) P.SocDistDuration = 7;
+	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Duration of social distancing after change", "%f", (void*) & (P.SocDistDuration2), 1, 1, 0)) P.SocDistDuration2 = 7;
 	if (P.DoPlaces)
 	{
-		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Relative place contact rate given social distancing by place type", "%lf", (void*)P.SocDistPlaceEffect, P.PlaceTypeNum, 1, 0))
+		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Relative place contact rate given social distancing by place type", "%f", (void*)P.SocDistPlaceEffect, P.PlaceTypeNum, 1, 0))
 			for (i = 0; i < NUM_PLACE_TYPES; i++) P.SocDistPlaceEffect[i] = 1;
-		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Relative place contact rate given enhanced social distancing by place type", "%lf", (void*)P.EnhancedSocDistPlaceEffect, P.PlaceTypeNum, 1, 0))
+		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Relative place contact rate given enhanced social distancing by place type", "%f", (void*)P.EnhancedSocDistPlaceEffect, P.PlaceTypeNum, 1, 0))
 			for (i = 0; i < NUM_PLACE_TYPES; i++) P.EnhancedSocDistPlaceEffect[i] = 1;
-		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Relative place contact rate given social distancing by place type after change", "%lf", (void*)P.SocDistPlaceEffect2, P.PlaceTypeNum, 1, 0))
+		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Relative place contact rate given social distancing by place type after change", "%f", (void*)P.SocDistPlaceEffect2, P.PlaceTypeNum, 1, 0))
 			for (i = 0; i < NUM_PLACE_TYPES; i++) P.SocDistPlaceEffect2[i] = P.SocDistPlaceEffect[i];
-		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Relative place contact rate given enhanced social distancing by place type after change", "%lf", (void*)P.EnhancedSocDistPlaceEffect2, P.PlaceTypeNum, 1, 0))
+		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Relative place contact rate given enhanced social distancing by place type after change", "%f", (void*)P.EnhancedSocDistPlaceEffect2, P.PlaceTypeNum, 1, 0))
 			for (i = 0; i < NUM_PLACE_TYPES; i++) P.EnhancedSocDistPlaceEffect2[i] = P.EnhancedSocDistPlaceEffect[i];
 	}
 	if (P.DoHouseholds)
 	{
-		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Relative household contact rate given social distancing", "%lf", (void*)&P.SocDistHouseholdEffect, 1, 1, 0)) P.SocDistHouseholdEffect = 1;
-		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Relative household contact rate given enhanced social distancing", "%lf", (void*)&P.EnhancedSocDistHouseholdEffect, 1, 1, 0)) P.EnhancedSocDistHouseholdEffect = 1;
-		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Relative household contact rate given social distancing  after change", "%lf", (void*)&P.SocDistHouseholdEffect2, 1, 1, 0)) P.SocDistHouseholdEffect2 = P.SocDistHouseholdEffect;
-		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Relative household contact rate given enhanced social distancing after change", "%lf", (void*)&P.EnhancedSocDistHouseholdEffect2, 1, 1, 0)) P.EnhancedSocDistHouseholdEffect2 = P.EnhancedSocDistHouseholdEffect;
+		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Relative household contact rate given social distancing", "%f", (void*)&P.SocDistHouseholdEffect, 1, 1, 0)) P.SocDistHouseholdEffect = 1;
+		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Relative household contact rate given enhanced social distancing", "%f", (void*)&P.EnhancedSocDistHouseholdEffect, 1, 1, 0)) P.EnhancedSocDistHouseholdEffect = 1;
+		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Relative household contact rate given social distancing  after change", "%f", (void*)&P.SocDistHouseholdEffect2, 1, 1, 0)) P.SocDistHouseholdEffect2 = P.SocDistHouseholdEffect;
+		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Relative household contact rate given enhanced social distancing after change", "%f", (void*)&P.EnhancedSocDistHouseholdEffect2, 1, 1, 0)) P.EnhancedSocDistHouseholdEffect2 = P.EnhancedSocDistHouseholdEffect;
 		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Cluster compliance with enhanced social distancing by household", "%i", (void*)&P.EnhancedSocDistClusterByHousehold, 1, 1, 0)) P.EnhancedSocDistClusterByHousehold = 0;
 	}
 	else
 		P.EnhancedSocDistClusterByHousehold = 0;
-	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Relative spatial contact rate given social distancing", "%lf", (void*)& P.SocDistSpatialEffect, 1, 1, 0)) P.SocDistSpatialEffect = 1;
-	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Relative spatial contact rate given social distancing after change", "%lf", (void*)&P.SocDistSpatialEffect2, 1, 1, 0)) P.SocDistSpatialEffect2 = P.SocDistSpatialEffect;
-	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Minimum radius for social distancing", "%lf", (void*) & (P.SocDistRadius), 1, 1, 0)) P.SocDistRadius = 0;
-	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Social distancing start time", "%lf", (void*) & (P.SocDistTimeStartBase), 1, 1, 0)) P.SocDistTimeStartBase = USHRT_MAX / P.TimeStepsPerDay;
-	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Delay for change in effectiveness of social distancing", "%lf", (void*)&(P.SocDistChangeDelay), 1, 1, 0)) P.SocDistChangeDelay = USHRT_MAX / P.TimeStepsPerDay;
-	if(!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Proportion compliant with enhanced social distancing by age group", "%lf", (void*)P.EnhancedSocDistProportionCompliant, NUM_AGE_GROUPS, 1, 0))
+	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Relative spatial contact rate given social distancing", "%f", (void*)& P.SocDistSpatialEffect, 1, 1, 0)) P.SocDistSpatialEffect = 1;
+	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Relative spatial contact rate given social distancing after change", "%f", (void*)&P.SocDistSpatialEffect2, 1, 1, 0)) P.SocDistSpatialEffect2 = P.SocDistSpatialEffect;
+	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Minimum radius for social distancing", "%f", (void*) & (P.SocDistRadius), 1, 1, 0)) P.SocDistRadius = 0;
+	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Social distancing start time", "%f", (void*) & (P.SocDistTimeStartBase), 1, 1, 0)) P.SocDistTimeStartBase = USHRT_MAX / P.TimeStepsPerDay;
+	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Delay for change in effectiveness of social distancing", "%f", (void*)&(P.SocDistChangeDelay), 1, 1, 0)) P.SocDistChangeDelay = USHRT_MAX / P.TimeStepsPerDay;
+	if(!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Proportion compliant with enhanced social distancing by age group", "%f", (void*)P.EnhancedSocDistProportionCompliant, NUM_AGE_GROUPS, 1, 0))
 	{
-		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Proportion compliant with enhanced social distancing", "%lf", (void*)&t, 1, 1, 0)) t = 0;
+		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Proportion compliant with enhanced social distancing", "%f", (void*)&t, 1, 1, 0)) t = 0;
 		for (i = 0; i < NUM_AGE_GROUPS; i++)
 			P.EnhancedSocDistProportionCompliant[i] = t;
 	}
-	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Relative spatial contact rate given enhanced social distancing", "%lf", (void*)& P.EnhancedSocDistSpatialEffect, 1, 1, 0)) P.EnhancedSocDistSpatialEffect = 1;
-	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Relative spatial contact rate given enhanced social distancing after change", "%lf", (void*)&P.EnhancedSocDistSpatialEffect2, 1, 1, 0)) P.EnhancedSocDistSpatialEffect2 = P.EnhancedSocDistSpatialEffect;
+	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Relative spatial contact rate given enhanced social distancing", "%f", (void*)& P.EnhancedSocDistSpatialEffect, 1, 1, 0)) P.EnhancedSocDistSpatialEffect = 1;
+	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Relative spatial contact rate given enhanced social distancing after change", "%f", (void*)&P.EnhancedSocDistSpatialEffect2, 1, 1, 0)) P.EnhancedSocDistSpatialEffect2 = P.EnhancedSocDistSpatialEffect;
 
 	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Social distancing only once", "%i", (void*) & (P.DoSocDistOnceOnly), 1, 1, 0)) P.DoSocDistOnceOnly = 0;
 	if (P.DoSocDistOnceOnly) P.DoSocDistOnceOnly = 4;
 
-	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Airport closure effectiveness", "%lf", (void*) & (P.AirportCloseEffectiveness), 1, 1, 0)) P.AirportCloseEffectiveness = 0;
+	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Airport closure effectiveness", "%f", (void*) & (P.AirportCloseEffectiveness), 1, 1, 0)) P.AirportCloseEffectiveness = 0;
 	P.AirportCloseEffectiveness = 1.0 - P.AirportCloseEffectiveness;
-	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Airport closure start time", "%lf", (void*) & (P.AirportCloseTimeStartBase), 1, 1, 0)) P.AirportCloseTimeStartBase = USHRT_MAX / P.TimeStepsPerDay;
-	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Airport closure duration", "%lf", (void*) & (P.AirportCloseDuration), 1, 1, 0)) P.AirportCloseDuration = USHRT_MAX / P.TimeStepsPerDay;
+	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Airport closure start time", "%f", (void*) & (P.AirportCloseTimeStartBase), 1, 1, 0)) P.AirportCloseTimeStartBase = USHRT_MAX / P.TimeStepsPerDay;
+	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Airport closure duration", "%f", (void*) & (P.AirportCloseDuration), 1, 1, 0)) P.AirportCloseDuration = USHRT_MAX / P.TimeStepsPerDay;
 
 	///// **** ///// **** ///// **** ///// **** ///// **** ///// **** ///// **** ///// **** ///// **** ///// **** ///// **** ///// ****
 	///// **** HOUSEHOLD QUARANTINE
@@ -1675,31 +1675,31 @@ void ReadParams(std::string const& ParamFile, std::string const& PreParamFile, s
 	if (P.DoHouseholds)
 	{
 		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Retrigger household quarantine with each new case in quarantine window", "%i", (void*) & (P.DoHQretrigger), 1, 1, 0)) P.DoHQretrigger =0;
-		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Household quarantine start time", "%lf", (void*) & (P.HQuarantineTimeStartBase), 1, 1, 0)) P.HQuarantineTimeStartBase = USHRT_MAX / P.TimeStepsPerDay;
-		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Delay to start household quarantine", "%lf", (void*) & (P.HQuarantineDelay), 1, 1, 0)) P.HQuarantineDelay = 0;
-		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Length of time households are quarantined", "%lf", (void*) & (P.HQuarantineHouseDuration), 1, 1, 0)) P.HQuarantineHouseDuration = 0;
-		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Duration of household quarantine policy", "%lf", (void*) & (P.HQuarantinePolicyDuration), 1, 1, 0)) P.HQuarantinePolicyDuration = USHRT_MAX / P.TimeStepsPerDay;
-		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Relative household contact rate after quarantine", "%lf", (void*) & (P.HQuarantineHouseEffect), 1, 1, 0)) P.HQuarantineHouseEffect = 1;
+		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Household quarantine start time", "%f", (void*) & (P.HQuarantineTimeStartBase), 1, 1, 0)) P.HQuarantineTimeStartBase = USHRT_MAX / P.TimeStepsPerDay;
+		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Delay to start household quarantine", "%f", (void*) & (P.HQuarantineDelay), 1, 1, 0)) P.HQuarantineDelay = 0;
+		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Length of time households are quarantined", "%f", (void*) & (P.HQuarantineHouseDuration), 1, 1, 0)) P.HQuarantineHouseDuration = 0;
+		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Duration of household quarantine policy", "%f", (void*) & (P.HQuarantinePolicyDuration), 1, 1, 0)) P.HQuarantinePolicyDuration = USHRT_MAX / P.TimeStepsPerDay;
+		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Relative household contact rate after quarantine", "%f", (void*) & (P.HQuarantineHouseEffect), 1, 1, 0)) P.HQuarantineHouseEffect = 1;
 		if (P.DoPlaces)
 		{
-			if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Residual place contacts after household quarantine by place type", "%lf", (void*)P.HQuarantinePlaceEffect, P.PlaceTypeNum, 1, 0))
+			if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Residual place contacts after household quarantine by place type", "%f", (void*)P.HQuarantinePlaceEffect, P.PlaceTypeNum, 1, 0))
 				for (i = 0; i < NUM_PLACE_TYPES; i++) P.HQuarantinePlaceEffect[i] = 1;
 		}
-		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Residual spatial contacts after household quarantine", "%lf", (void*) & (P.HQuarantineSpatialEffect), 1, 1, 0)) P.HQuarantineSpatialEffect = 1;
-		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Household level compliance with quarantine", "%lf", (void*) & (P.HQuarantinePropHouseCompliant), 1, 1, 0)) P.HQuarantinePropHouseCompliant = 1;
-		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Individual level compliance with quarantine", "%lf", (void*) & (P.HQuarantinePropIndivCompliant), 1, 1, 0)) P.HQuarantinePropIndivCompliant = 1;
+		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Residual spatial contacts after household quarantine", "%f", (void*) & (P.HQuarantineSpatialEffect), 1, 1, 0)) P.HQuarantineSpatialEffect = 1;
+		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Household level compliance with quarantine", "%f", (void*) & (P.HQuarantinePropHouseCompliant), 1, 1, 0)) P.HQuarantinePropHouseCompliant = 1;
+		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Individual level compliance with quarantine", "%f", (void*) & (P.HQuarantinePropIndivCompliant), 1, 1, 0)) P.HQuarantinePropIndivCompliant = 1;
 	}
 	else
 		P.HQuarantineTimeStartBase = 1e10;
-	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Case isolation start time", "%lf", (void*) & (P.CaseIsolationTimeStartBase), 1, 1, 0)) P.CaseIsolationTimeStartBase = USHRT_MAX / P.TimeStepsPerDay;
-	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Proportion of detected cases isolated", "%lf", (void*) & (P.CaseIsolationProp), 1, 1, 0)) P.CaseIsolationProp = 0;
-	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Delay to start case isolation", "%lf", (void*) & (P.CaseIsolationDelay), 1, 1, 0)) P.CaseIsolationDelay = 0;
-	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Duration of case isolation", "%lf", (void*) & (P.CaseIsolationDuration), 1, 1, 0)) P.CaseIsolationDuration = 0;
-	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Duration of case isolation policy", "%lf", (void*) & (P.CaseIsolationPolicyDuration), 1, 1, 0)) P.CaseIsolationPolicyDuration = 1e10;
-	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Residual contacts after case isolation", "%lf", (void*) & (P.CaseIsolationEffectiveness), 1, 1, 0)) P.CaseIsolationEffectiveness = 1;
+	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Case isolation start time", "%f", (void*) & (P.CaseIsolationTimeStartBase), 1, 1, 0)) P.CaseIsolationTimeStartBase = USHRT_MAX / P.TimeStepsPerDay;
+	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Proportion of detected cases isolated", "%f", (void*) & (P.CaseIsolationProp), 1, 1, 0)) P.CaseIsolationProp = 0;
+	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Delay to start case isolation", "%f", (void*) & (P.CaseIsolationDelay), 1, 1, 0)) P.CaseIsolationDelay = 0;
+	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Duration of case isolation", "%f", (void*) & (P.CaseIsolationDuration), 1, 1, 0)) P.CaseIsolationDuration = 0;
+	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Duration of case isolation policy", "%f", (void*) & (P.CaseIsolationPolicyDuration), 1, 1, 0)) P.CaseIsolationPolicyDuration = 1e10;
+	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Residual contacts after case isolation", "%f", (void*) & (P.CaseIsolationEffectiveness), 1, 1, 0)) P.CaseIsolationEffectiveness = 1;
 	if (P.DoHouseholds)
 	{
-		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Residual household contacts after case isolation", "%lf", (void*) & (P.CaseIsolationHouseEffectiveness), 1, 1, 0))
+		if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Residual household contacts after case isolation", "%f", (void*) & (P.CaseIsolationHouseEffectiveness), 1, 1, 0))
 			P.CaseIsolationHouseEffectiveness = P.CaseIsolationEffectiveness;
 	}
 
@@ -1742,11 +1742,11 @@ void ReadParams(std::string const& ParamFile, std::string const& PreParamFile, s
 		P.DCT_ChangeTimes	[ChangeTime] = 1e10;
 	}
 	//// Get real values from (pre)param file
-	GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Change times for levels of social distancing"		, "%lf", (void*)P.SD_ChangeTimes	, P.Num_SD_ChangeTimes	, 1, 0);
-	GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Change times for levels of case isolation"			, "%lf", (void*)P.CI_ChangeTimes	, P.Num_CI_ChangeTimes	, 1, 0);
-	GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Change times for levels of household quarantine"	, "%lf", (void*)P.HQ_ChangeTimes	, P.Num_HQ_ChangeTimes	, 1, 0);
-	GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Change times for levels of place closure"			, "%lf", (void*)P.PC_ChangeTimes	, P.Num_PC_ChangeTimes	, 1, 0);
-	GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Change times for levels of digital contact tracing", "%lf", (void*)P.DCT_ChangeTimes, P.Num_DCT_ChangeTimes	, 1, 0);
+	GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Change times for levels of social distancing"		, "%f", (void*)P.SD_ChangeTimes	, P.Num_SD_ChangeTimes	, 1, 0);
+	GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Change times for levels of case isolation"			, "%f", (void*)P.CI_ChangeTimes	, P.Num_CI_ChangeTimes	, 1, 0);
+	GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Change times for levels of household quarantine"	, "%f", (void*)P.HQ_ChangeTimes	, P.Num_HQ_ChangeTimes	, 1, 0);
+	GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Change times for levels of place closure"			, "%f", (void*)P.PC_ChangeTimes	, P.Num_PC_ChangeTimes	, 1, 0);
+	GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Change times for levels of digital contact tracing", "%f", (void*)P.DCT_ChangeTimes, P.Num_DCT_ChangeTimes	, 1, 0);
 
 	// initialize to zero (regardless of whether doing places or households).
 	for (int ChangeTime = 0; ChangeTime < MAX_NUM_INTERVENTION_CHANGE_TIMES; ChangeTime++)
@@ -1789,44 +1789,44 @@ void ReadParams(std::string const& ParamFile, std::string const& PreParamFile, s
 	//// **** "efficacies": by default, initialize to values read in previously.
 	///// spatial contact rates rates over time (and place too for CI and DCT)
 	//// soc dist
-	if (!P.VaryEfficaciesOverTime || !GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Relative spatial contact rates over time given social distancing"			, "%lf", (void*)P.SD_SpatialEffects_OverTime, P.Num_SD_ChangeTimes, 1, 0))
+	if (!P.VaryEfficaciesOverTime || !GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Relative spatial contact rates over time given social distancing"			, "%f", (void*)P.SD_SpatialEffects_OverTime, P.Num_SD_ChangeTimes, 1, 0))
 		for (int ChangeTime = 0; ChangeTime < P.Num_SD_ChangeTimes; ChangeTime++) P.SD_SpatialEffects_OverTime[ChangeTime] = P.SocDistSpatialEffect; //// by default, initialize to Relative spatial contact rate given social distancing
 	//// enhanced soc dist
-	if (!P.VaryEfficaciesOverTime || !GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Relative spatial contact rates over time given enhanced social distancing"	, "%lf", (void*)P.Enhanced_SD_SpatialEffects_OverTime, P.Num_SD_ChangeTimes, 1, 0))
+	if (!P.VaryEfficaciesOverTime || !GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Relative spatial contact rates over time given enhanced social distancing"	, "%f", (void*)P.Enhanced_SD_SpatialEffects_OverTime, P.Num_SD_ChangeTimes, 1, 0))
 		for (int ChangeTime = 0; ChangeTime < P.Num_SD_ChangeTimes; ChangeTime++) P.Enhanced_SD_SpatialEffects_OverTime[ChangeTime] = P.EnhancedSocDistSpatialEffect; //// by default, initialize to Relative spatial contact rate given enhanced social distancing
 	//// case isolation
-	if (!P.VaryEfficaciesOverTime || !GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Residual contacts after case isolation over time"							, "%lf", (void*)P.CI_SpatialAndPlaceEffects_OverTime, P.Num_CI_ChangeTimes, 1, 0))
+	if (!P.VaryEfficaciesOverTime || !GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Residual contacts after case isolation over time"							, "%f", (void*)P.CI_SpatialAndPlaceEffects_OverTime, P.Num_CI_ChangeTimes, 1, 0))
 		for (int ChangeTime = 0; ChangeTime < P.Num_CI_ChangeTimes; ChangeTime++) P.CI_SpatialAndPlaceEffects_OverTime[ChangeTime] = P.CaseIsolationEffectiveness;
 	//// household quarantine
-	if (!P.VaryEfficaciesOverTime || !GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Residual spatial contacts over time after household quarantine"				, "%lf", (void*)P.HQ_SpatialEffects_OverTime, P.Num_HQ_ChangeTimes, 1, 0))
+	if (!P.VaryEfficaciesOverTime || !GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Residual spatial contacts over time after household quarantine"				, "%f", (void*)P.HQ_SpatialEffects_OverTime, P.Num_HQ_ChangeTimes, 1, 0))
 		for (int ChangeTime = 0; ChangeTime < P.Num_HQ_ChangeTimes; ChangeTime++) P.HQ_SpatialEffects_OverTime[ChangeTime] = P.HQuarantineSpatialEffect;
 	//// place closure
-	if (!P.VaryEfficaciesOverTime || !GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Relative spatial contact rates over time after place closure"				, "%lf", (void*)P.PC_SpatialEffects_OverTime, P.Num_PC_ChangeTimes, 1, 0))
+	if (!P.VaryEfficaciesOverTime || !GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Relative spatial contact rates over time after place closure"				, "%f", (void*)P.PC_SpatialEffects_OverTime, P.Num_PC_ChangeTimes, 1, 0))
 		for (int ChangeTime = 0; ChangeTime < P.Num_PC_ChangeTimes; ChangeTime++) P.PC_SpatialEffects_OverTime[ChangeTime] = P.PlaceCloseSpatialRelContact;
 	//// digital contact tracing
-	if (!P.VaryEfficaciesOverTime || !GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Residual contacts after digital contact tracing isolation over time"			, "%lf", (void*)P.DCT_SpatialAndPlaceEffects_OverTime, P.Num_DCT_ChangeTimes, 1, 0))
+	if (!P.VaryEfficaciesOverTime || !GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Residual contacts after digital contact tracing isolation over time"			, "%f", (void*)P.DCT_SpatialAndPlaceEffects_OverTime, P.Num_DCT_ChangeTimes, 1, 0))
 		for (int ChangeTime = 0; ChangeTime < P.Num_DCT_ChangeTimes; ChangeTime++) P.DCT_SpatialAndPlaceEffects_OverTime[ChangeTime] = P.DCTCaseIsolationEffectiveness;
 
 	///// Household contact rates over time
 	if (P.DoHouseholds)
 	{
 		//// soc dist
-		if (!P.VaryEfficaciesOverTime || !GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Relative household contact rates over time given social distancing"			, "%lf", (void*)P.SD_HouseholdEffects_OverTime, P.Num_SD_ChangeTimes, 1, 0))
+		if (!P.VaryEfficaciesOverTime || !GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Relative household contact rates over time given social distancing"			, "%f", (void*)P.SD_HouseholdEffects_OverTime, P.Num_SD_ChangeTimes, 1, 0))
 			for (int ChangeTime = 0; ChangeTime < P.Num_SD_ChangeTimes; ChangeTime++) P.SD_HouseholdEffects_OverTime[ChangeTime] = P.SocDistHouseholdEffect;
 		//// enhanced soc dist
-		if (!P.VaryEfficaciesOverTime || !GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Relative household contact rates over time given enhanced social distancing"	, "%lf", (void*)P.Enhanced_SD_HouseholdEffects_OverTime, P.Num_SD_ChangeTimes, 1, 0))
+		if (!P.VaryEfficaciesOverTime || !GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Relative household contact rates over time given enhanced social distancing"	, "%f", (void*)P.Enhanced_SD_HouseholdEffects_OverTime, P.Num_SD_ChangeTimes, 1, 0))
 			for (int ChangeTime = 0; ChangeTime < P.Num_SD_ChangeTimes; ChangeTime++) P.Enhanced_SD_HouseholdEffects_OverTime[ChangeTime] = P.EnhancedSocDistHouseholdEffect;
 		//// case isolation
-		if (!P.VaryEfficaciesOverTime || !GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Residual household contacts after case isolation over time"					, "%lf", (void*)P.CI_HouseholdEffects_OverTime, P.Num_CI_ChangeTimes, 1, 0))
+		if (!P.VaryEfficaciesOverTime || !GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Residual household contacts after case isolation over time"					, "%f", (void*)P.CI_HouseholdEffects_OverTime, P.Num_CI_ChangeTimes, 1, 0))
 			for (int ChangeTime = 0; ChangeTime < P.Num_CI_ChangeTimes; ChangeTime++) P.CI_HouseholdEffects_OverTime[ChangeTime] = P.CaseIsolationHouseEffectiveness;
 		//// household quarantine
-		if (!P.VaryEfficaciesOverTime || !GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Relative household contact rates over time after quarantine"					, "%lf", (void*)P.HQ_HouseholdEffects_OverTime, P.Num_HQ_ChangeTimes, 1, 0))
+		if (!P.VaryEfficaciesOverTime || !GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Relative household contact rates over time after quarantine"					, "%f", (void*)P.HQ_HouseholdEffects_OverTime, P.Num_HQ_ChangeTimes, 1, 0))
 			for (int ChangeTime = 0; ChangeTime < P.Num_HQ_ChangeTimes; ChangeTime++) P.HQ_HouseholdEffects_OverTime[ChangeTime] = P.HQuarantineHouseEffect;
 		//// place closure
-		if (!P.VaryEfficaciesOverTime || !GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Relative household contact rates over time after place closure"				, "%lf", (void*)P.PC_HouseholdEffects_OverTime, P.Num_PC_ChangeTimes, 1, 0))
+		if (!P.VaryEfficaciesOverTime || !GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Relative household contact rates over time after place closure"				, "%f", (void*)P.PC_HouseholdEffects_OverTime, P.Num_PC_ChangeTimes, 1, 0))
 			for (int ChangeTime = 0; ChangeTime < P.Num_PC_ChangeTimes; ChangeTime++) P.PC_HouseholdEffects_OverTime[ChangeTime] = P.PlaceCloseHouseholdRelContact;
 		//// digital contact tracing
-		if (!P.VaryEfficaciesOverTime || !GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Residual household contacts after digital contact tracing isolation over time", "%lf", (void*)P.DCT_HouseholdEffects_OverTime, P.Num_DCT_ChangeTimes, 1, 0))
+		if (!P.VaryEfficaciesOverTime || !GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Residual household contacts after digital contact tracing isolation over time", "%f", (void*)P.DCT_HouseholdEffects_OverTime, P.Num_DCT_ChangeTimes, 1, 0))
 			for (int ChangeTime = 0; ChangeTime < P.Num_DCT_ChangeTimes; ChangeTime++) P.DCT_HouseholdEffects_OverTime[ChangeTime] = P.DCTCaseIsolationHouseEffectiveness;
 	}
 
@@ -1834,30 +1834,30 @@ void ReadParams(std::string const& ParamFile, std::string const& PreParamFile, s
 	if (P.DoPlaces)
 	{
 		//// soc dist
-		if (!P.VaryEfficaciesOverTime || !GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Relative place contact rates over time given social distancing by place type", "%lf", (void*) &P.SD_PlaceEffects_OverTime[0][0], P.Num_SD_ChangeTimes * P.PlaceTypeNum, 1, 0))
+		if (!P.VaryEfficaciesOverTime || !GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Relative place contact rates over time given social distancing by place type", "%f", (void*) &P.SD_PlaceEffects_OverTime[0][0], P.Num_SD_ChangeTimes * P.PlaceTypeNum, 1, 0))
 			for (int ChangeTime = 0; ChangeTime < P.Num_SD_ChangeTimes; ChangeTime++) //// by default populate to values of P.SocDistPlaceEffect
 				for (int PlaceType = 0; PlaceType < P.PlaceTypeNum; PlaceType++)
 					P.SD_PlaceEffects_OverTime[ChangeTime][PlaceType] = P.SocDistPlaceEffect[PlaceType];
 
 		//// enhanced soc dist
-		if (!P.VaryEfficaciesOverTime || !GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Relative place contact rates over time given enhanced social distancing by place type", "%lf", (void*) &P.Enhanced_SD_PlaceEffects_OverTime[0][0], P.Num_SD_ChangeTimes * P.PlaceTypeNum, 1, 0))
+		if (!P.VaryEfficaciesOverTime || !GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Relative place contact rates over time given enhanced social distancing by place type", "%f", (void*) &P.Enhanced_SD_PlaceEffects_OverTime[0][0], P.Num_SD_ChangeTimes * P.PlaceTypeNum, 1, 0))
 			for (int ChangeTime = 0; ChangeTime < P.Num_SD_ChangeTimes; ChangeTime++) //// by default populate to values of P.EnhancedSocDistPlaceEffect
 				for (int PlaceType = 0; PlaceType < P.PlaceTypeNum; PlaceType++)
 					P.Enhanced_SD_PlaceEffects_OverTime[ChangeTime][PlaceType] = P.EnhancedSocDistPlaceEffect[PlaceType];
 
 		//// household quarantine
-		if (!P.VaryEfficaciesOverTime || !GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Residual place contacts over time after household quarantine by place type", "%lf", (void*) &P.HQ_PlaceEffects_OverTime[0][0], P.Num_HQ_ChangeTimes * P.PlaceTypeNum, 1, 0))
+		if (!P.VaryEfficaciesOverTime || !GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Residual place contacts over time after household quarantine by place type", "%f", (void*) &P.HQ_PlaceEffects_OverTime[0][0], P.Num_HQ_ChangeTimes * P.PlaceTypeNum, 1, 0))
 			for (int ChangeTime = 0; ChangeTime < P.Num_HQ_ChangeTimes; ChangeTime++) //// by default populate to values of P.HQuarantinePlaceEffect
 				for (int PlaceType = 0; PlaceType < P.PlaceTypeNum; PlaceType++)
 					P.HQ_PlaceEffects_OverTime[ChangeTime][PlaceType] = P.HQuarantinePlaceEffect[PlaceType];
 
 		//// place closure
-		if (!P.VaryEfficaciesOverTime || !GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Proportion of places remaining open after closure by place type over time", "%lf", (void*) &P.PC_PlaceEffects_OverTime[0][0], P.Num_PC_ChangeTimes * P.PlaceTypeNum, 1, 0))
+		if (!P.VaryEfficaciesOverTime || !GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Proportion of places remaining open after closure by place type over time", "%f", (void*) &P.PC_PlaceEffects_OverTime[0][0], P.Num_PC_ChangeTimes * P.PlaceTypeNum, 1, 0))
 			for (int ChangeTime = 0; ChangeTime < P.Num_PC_ChangeTimes; ChangeTime++) //// by default populate to values of P.PlaceCloseEffect
 				for (int PlaceType = 0; PlaceType < P.PlaceTypeNum; PlaceType++)
 					P.PC_PlaceEffects_OverTime[ChangeTime][PlaceType] = P.PlaceCloseEffect[PlaceType];
 
-		if (!P.VaryEfficaciesOverTime || !GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Proportional attendance after closure by place type over time", "%lf", (void*) &P.PC_PropAttending_OverTime[0][0], P.Num_PC_ChangeTimes * P.PlaceTypeNum, 1, 0))
+		if (!P.VaryEfficaciesOverTime || !GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Proportional attendance after closure by place type over time", "%f", (void*) &P.PC_PropAttending_OverTime[0][0], P.Num_PC_ChangeTimes * P.PlaceTypeNum, 1, 0))
 			for (int ChangeTime = 0; ChangeTime < P.Num_PC_ChangeTimes; ChangeTime++) //// by default populate to values of P.PlaceClosePropAttending
 				for (int PlaceType = 0; PlaceType < P.PlaceTypeNum; PlaceType++)
 					P.PC_PropAttending_OverTime[ChangeTime][PlaceType] = P.PlaceClosePropAttending[PlaceType];
@@ -1866,16 +1866,16 @@ void ReadParams(std::string const& ParamFile, std::string const& PreParamFile, s
 
 	//// ****  compliance
 	//// case isolation
-	if (!P.VaryEfficaciesOverTime || !GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Proportion of detected cases isolated over time", "%lf", (void*)P.CI_Prop_OverTime, P.Num_CI_ChangeTimes, 1, 0))
+	if (!P.VaryEfficaciesOverTime || !GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Proportion of detected cases isolated over time", "%f", (void*)P.CI_Prop_OverTime, P.Num_CI_ChangeTimes, 1, 0))
 		for (int ChangeTime = 0; ChangeTime < P.Num_CI_ChangeTimes; ChangeTime++) P.CI_Prop_OverTime[ChangeTime] = P.CaseIsolationProp;
 	//// household quarantine (individual level)
-	if (!P.VaryEfficaciesOverTime || !GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Individual level compliance with quarantine over time"	, "%lf", (void*)P.HQ_Individual_PropComply_OverTime, P.Num_HQ_ChangeTimes, 1, 0))
+	if (!P.VaryEfficaciesOverTime || !GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Individual level compliance with quarantine over time"	, "%f", (void*)P.HQ_Individual_PropComply_OverTime, P.Num_HQ_ChangeTimes, 1, 0))
 		for (int ChangeTime = 0; ChangeTime < P.Num_HQ_ChangeTimes; ChangeTime++) P.HQ_Individual_PropComply_OverTime[ChangeTime] = P.HQuarantinePropIndivCompliant;
 	//// household quarantine (Household level)
-	if (!P.VaryEfficaciesOverTime || !GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Household level compliance with quarantine over time"	, "%lf", (void*)P.HQ_Household_PropComply_OverTime, P.Num_HQ_ChangeTimes, 1, 0))
+	if (!P.VaryEfficaciesOverTime || !GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Household level compliance with quarantine over time"	, "%f", (void*)P.HQ_Household_PropComply_OverTime, P.Num_HQ_ChangeTimes, 1, 0))
 		for (int ChangeTime = 0; ChangeTime < P.Num_HQ_ChangeTimes; ChangeTime++) P.HQ_Household_PropComply_OverTime[ChangeTime] = P.HQuarantinePropHouseCompliant;
 	//// digital contact tracing
-	if (!P.VaryEfficaciesOverTime || !GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Proportion of digital contacts who self-isolate over time", "%lf", (void*)P.DCT_Prop_OverTime, P.Num_DCT_ChangeTimes, 1, 0))
+	if (!P.VaryEfficaciesOverTime || !GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Proportion of digital contacts who self-isolate over time", "%f", (void*)P.DCT_Prop_OverTime, P.Num_DCT_ChangeTimes, 1, 0))
 		for (int ChangeTime = 0; ChangeTime < P.Num_DCT_ChangeTimes; ChangeTime++) P.DCT_Prop_OverTime[ChangeTime] = P.ProportionDigitalContactsIsolate;
 	if (!P.VaryEfficaciesOverTime || !GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Maximum number of contacts to trace per index case over time", "%i", (void*)P.DCT_MaxToTrace_OverTime, P.Num_DCT_ChangeTimes, 1, 0))
 		for (int ChangeTime = 0; ChangeTime < P.Num_DCT_ChangeTimes; ChangeTime++) P.DCT_MaxToTrace_OverTime[ChangeTime] = P.MaxDigitalContactsToTrace;
@@ -1883,10 +1883,10 @@ void ReadParams(std::string const& ParamFile, std::string const& PreParamFile, s
 	{
 		//// ****  thresholds
 		//// place closure (global threshold)
-		if (!P.VaryEfficaciesOverTime || !GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Place closure incidence threshold over time", "%lf", (void*)P.PC_IncThresh_OverTime, P.Num_PC_ChangeTimes, 1, 0))
+		if (!P.VaryEfficaciesOverTime || !GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Place closure incidence threshold over time", "%f", (void*)P.PC_IncThresh_OverTime, P.Num_PC_ChangeTimes, 1, 0))
 			for (int ChangeTime = 0; ChangeTime < P.Num_PC_ChangeTimes; ChangeTime++) P.PC_IncThresh_OverTime[ChangeTime] = P.PlaceCloseIncTrig1;
 		//// place closure (fractional global threshold)
-		if (!P.VaryEfficaciesOverTime || !GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Place closure fractional incidence threshold over time", "%lf", (void*)P.PC_FracIncThresh_OverTime, P.Num_PC_ChangeTimes, 1, 0))
+		if (!P.VaryEfficaciesOverTime || !GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Place closure fractional incidence threshold over time", "%f", (void*)P.PC_FracIncThresh_OverTime, P.Num_PC_ChangeTimes, 1, 0))
 			for (int ChangeTime = 0; ChangeTime < P.Num_PC_ChangeTimes; ChangeTime++) P.PC_FracIncThresh_OverTime[ChangeTime] = P.PlaceCloseFracIncTrig;
 		//// place closure (cell incidence threshold)
 		if (!P.VaryEfficaciesOverTime || !GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Trigger incidence per cell for place closure over time", "%i", (void*)P.PC_CellIncThresh_OverTime, P.Num_PC_ChangeTimes, 1, 0))
@@ -1894,10 +1894,10 @@ void ReadParams(std::string const& ParamFile, std::string const& PreParamFile, s
 		for (int ChangeTime = 0; ChangeTime < P.Num_PC_ChangeTimes; ChangeTime++) if(P.PC_CellIncThresh_OverTime[ChangeTime]<0) P.PC_CellIncThresh_OverTime[ChangeTime] = 1000000000; // allows -1 to be used as a proxy for no cell-based triggering
 	}
 	//// household quarantine
-	if (!P.VaryEfficaciesOverTime || !GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Household quarantine trigger incidence per cell over time", "%lf", (void*)P.HQ_CellIncThresh_OverTime, P.Num_HQ_ChangeTimes, 1, 0))
+	if (!P.VaryEfficaciesOverTime || !GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Household quarantine trigger incidence per cell over time", "%f", (void*)P.HQ_CellIncThresh_OverTime, P.Num_HQ_ChangeTimes, 1, 0))
 		for (int ChangeTime = 0; ChangeTime < P.Num_HQ_ChangeTimes; ChangeTime++) P.HQ_CellIncThresh_OverTime[ChangeTime] = P.HHQuar_CellIncThresh;
 	//// case isolation
-	if (!P.VaryEfficaciesOverTime || !GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Case isolation trigger incidence per cell over time", "%lf", (void*)P.CI_CellIncThresh_OverTime, P.Num_CI_ChangeTimes, 1, 0))
+	if (!P.VaryEfficaciesOverTime || !GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Case isolation trigger incidence per cell over time", "%f", (void*)P.CI_CellIncThresh_OverTime, P.Num_CI_ChangeTimes, 1, 0))
 		for (int ChangeTime = 0; ChangeTime < P.Num_CI_ChangeTimes; ChangeTime++) P.CI_CellIncThresh_OverTime[ChangeTime] = P.CaseIsolation_CellIncThresh;
 	//// soc dists
 	if (!P.VaryEfficaciesOverTime || !GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Trigger incidence per cell for social distancing over time", "%i", (void*)P.SD_CellIncThresh_OverTime, P.Num_SD_ChangeTimes, 1, 0))
@@ -1905,7 +1905,7 @@ void ReadParams(std::string const& ParamFile, std::string const& PreParamFile, s
 
 	//// **** Durations (later add Case isolation and Household quarantine)
 	// place closure
-	if (!P.VaryEfficaciesOverTime || !GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Duration of place closure over time", "%lf", (void*)P.PC_Durs_OverTime, P.Num_PC_ChangeTimes, 1, 0))
+	if (!P.VaryEfficaciesOverTime || !GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Duration of place closure over time", "%f", (void*)P.PC_Durs_OverTime, P.Num_PC_ChangeTimes, 1, 0))
 		for (int ChangeTime = 0; ChangeTime < P.Num_PC_ChangeTimes; ChangeTime++) P.PC_Durs_OverTime[ChangeTime] = P.PlaceCloseDurationBase;
 
 	//// Guards: make unused change values in array equal to final used value
@@ -1983,17 +1983,17 @@ void ReadParams(std::string const& ParamFile, std::string const& PreParamFile, s
 			if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Number of key workers randomly distributed in the population", "%i", (void*) & (P.KeyWorkerPopNum), 1, 1, 0)) P.KeyWorkerPopNum = 0;
 			if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Number of key workers in different places by place type", "%i", (void*)P.KeyWorkerPlaceNum, P.PlaceTypeNum, 1, 0))
 				for (i = 0; i < NUM_PLACE_TYPES; i++) P.KeyWorkerPlaceNum[i] = 0;
-			if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Proportion of staff who are key workers per chosen place by place type", "%lf", (void*)P.KeyWorkerPropInKeyPlaces, P.PlaceTypeNum, 1, 0))
+			if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Proportion of staff who are key workers per chosen place by place type", "%f", (void*)P.KeyWorkerPropInKeyPlaces, P.PlaceTypeNum, 1, 0))
 				for (i = 0; i < NUM_PLACE_TYPES; i++) P.KeyWorkerPropInKeyPlaces[i] = 1.0;
 			if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Trigger incidence per cell for key worker prophylaxis", "%i", (void*) & (P.KeyWorkerProphCellIncThresh), 1, 1, 0)) P.KeyWorkerProphCellIncThresh = 1000000000;
-			if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Key worker prophylaxis start time", "%lf", (void*) & (P.KeyWorkerProphTimeStartBase), 1, 1, 0)) P.KeyWorkerProphTimeStartBase = USHRT_MAX / P.TimeStepsPerDay;
-			if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Duration of key worker prophylaxis", "%lf", (void*) & (P.KeyWorkerProphDuration), 1, 1, 0)) P.KeyWorkerProphDuration = 0;
-			if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Time interval from start of key worker prophylaxis before policy restarted", "%lf", (void*) & (P.KeyWorkerProphRenewalDuration), 1, 1, 0)) P.KeyWorkerProphRenewalDuration = P.KeyWorkerProphDuration;
+			if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Key worker prophylaxis start time", "%f", (void*) & (P.KeyWorkerProphTimeStartBase), 1, 1, 0)) P.KeyWorkerProphTimeStartBase = USHRT_MAX / P.TimeStepsPerDay;
+			if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Duration of key worker prophylaxis", "%f", (void*) & (P.KeyWorkerProphDuration), 1, 1, 0)) P.KeyWorkerProphDuration = 0;
+			if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Time interval from start of key worker prophylaxis before policy restarted", "%f", (void*) & (P.KeyWorkerProphRenewalDuration), 1, 1, 0)) P.KeyWorkerProphRenewalDuration = P.KeyWorkerProphDuration;
 			if (P.DoHouseholds)
 			{
-				if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Proportion of key workers whose households are also treated as key workers", "%lf", (void*) & (P.KeyWorkerHouseProp), 1, 1, 0)) P.KeyWorkerHouseProp = 0;
+				if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Proportion of key workers whose households are also treated as key workers", "%f", (void*) & (P.KeyWorkerHouseProp), 1, 1, 0)) P.KeyWorkerHouseProp = 0;
 			}
-			if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Minimum radius for key worker prophylaxis", "%lf", (void*) & (P.KeyWorkerProphRadius), 1, 1, 0)) P.KeyWorkerProphRadius = 0;
+			if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Minimum radius for key worker prophylaxis", "%f", (void*) & (P.KeyWorkerProphRadius), 1, 1, 0)) P.KeyWorkerProphRadius = 0;
 		}
 		else
 		{
@@ -2028,22 +2028,22 @@ void ReadParams(std::string const& ParamFile, std::string const& PreParamFile, s
 		if (!GetInputParameter2all(ParamFile_dat, PreParamFile_dat,AdminFile_dat, "Min parent age gap", "%i", (void*) & (P.MinParentAgeGap), 1, 1, 0)) P.MinParentAgeGap = 19;
 		if (!GetInputParameter2all(ParamFile_dat, PreParamFile_dat,AdminFile_dat, "Max parent age gap", "%i", (void*) & (P.MaxParentAgeGap), 1, 1, 0)) P.MaxParentAgeGap = 44;
 		if (!GetInputParameter2all(ParamFile_dat, PreParamFile_dat,AdminFile_dat, "Max child age", "%i", (void*) & (P.MaxChildAge), 1, 1, 0)) P.MaxChildAge = 20;
-		if (!GetInputParameter2all(ParamFile_dat, PreParamFile_dat,AdminFile_dat, "One Child Two Pers Prob", "%lf", (void*) & (P.OneChildTwoPersProb), 1, 1, 0)) P.OneChildTwoPersProb = 0.08;
-		if (!GetInputParameter2all(ParamFile_dat, PreParamFile_dat,AdminFile_dat, "Two Child Three Pers Prob", "%lf", (void*) & (P.TwoChildThreePersProb), 1, 1, 0)) P.TwoChildThreePersProb = 0.11;
-		if (!GetInputParameter2all(ParamFile_dat, PreParamFile_dat,AdminFile_dat, "One Pers House Prob Old", "%lf", (void*) & (P.OnePersHouseProbOld), 1, 1, 0)) P.OnePersHouseProbOld = 0.5;
-		if (!GetInputParameter2all(ParamFile_dat, PreParamFile_dat,AdminFile_dat, "Two Pers House Prob Old", "%lf", (void*) & (P.TwoPersHouseProbOld), 1, 1, 0)) P.TwoPersHouseProbOld = 0.5;
-		if (!GetInputParameter2all(ParamFile_dat, PreParamFile_dat,AdminFile_dat, "One Pers House Prob Young", "%lf", (void*) & (P.OnePersHouseProbYoung), 1, 1, 0)) P.OnePersHouseProbYoung = 0.23;
-		if (!GetInputParameter2all(ParamFile_dat, PreParamFile_dat,AdminFile_dat, "Two Pers House Prob Young", "%lf", (void*) & (P.TwoPersHouseProbYoung), 1, 1, 0)) P.TwoPersHouseProbYoung = 0.23;
-		if (!GetInputParameter2all(ParamFile_dat, PreParamFile_dat,AdminFile_dat, "One Child Prob Youngest Child Under Five", "%lf", (void*) & (P.OneChildProbYoungestChildUnderFive), 1, 1, 0)) P.OneChildProbYoungestChildUnderFive = 0.5;
-		if (!GetInputParameter2all(ParamFile_dat, PreParamFile_dat,AdminFile_dat, "Two Children Prob Youngest Under Five", "%lf", (void*) & (P.TwoChildrenProbYoungestUnderFive), 1, 1, 0)) P.TwoChildrenProbYoungestUnderFive = 0.0;
-		if (!GetInputParameter2all(ParamFile_dat, PreParamFile_dat,AdminFile_dat, "Prob Youngest Child Under Five", "%lf", (void*) & (P.ProbYoungestChildUnderFive), 1, 1, 0)) P.ProbYoungestChildUnderFive = 0;
-		if (!GetInputParameter2all(ParamFile_dat, PreParamFile_dat,AdminFile_dat, "Zero Child Three Pers Prob", "%lf", (void*) & (P.ZeroChildThreePersProb), 1, 1, 0)) P.ZeroChildThreePersProb = 0.25;
-		if (!GetInputParameter2all(ParamFile_dat, PreParamFile_dat,AdminFile_dat, "One Child Four Pers Prob", "%lf", (void*) & (P.OneChildFourPersProb), 1, 1, 0)) P.OneChildFourPersProb = 0.2;
-		if (!GetInputParameter2all(ParamFile_dat, PreParamFile_dat,AdminFile_dat, "Young And Single Slope", "%lf", (void*) & (P.YoungAndSingleSlope), 1, 1, 0)) P.YoungAndSingleSlope = 0.7;
+		if (!GetInputParameter2all(ParamFile_dat, PreParamFile_dat,AdminFile_dat, "One Child Two Pers Prob", "%f", (void*) & (P.OneChildTwoPersProb), 1, 1, 0)) P.OneChildTwoPersProb = 0.08;
+		if (!GetInputParameter2all(ParamFile_dat, PreParamFile_dat,AdminFile_dat, "Two Child Three Pers Prob", "%f", (void*) & (P.TwoChildThreePersProb), 1, 1, 0)) P.TwoChildThreePersProb = 0.11;
+		if (!GetInputParameter2all(ParamFile_dat, PreParamFile_dat,AdminFile_dat, "One Pers House Prob Old", "%f", (void*) & (P.OnePersHouseProbOld), 1, 1, 0)) P.OnePersHouseProbOld = 0.5;
+		if (!GetInputParameter2all(ParamFile_dat, PreParamFile_dat,AdminFile_dat, "Two Pers House Prob Old", "%f", (void*) & (P.TwoPersHouseProbOld), 1, 1, 0)) P.TwoPersHouseProbOld = 0.5;
+		if (!GetInputParameter2all(ParamFile_dat, PreParamFile_dat,AdminFile_dat, "One Pers House Prob Young", "%f", (void*) & (P.OnePersHouseProbYoung), 1, 1, 0)) P.OnePersHouseProbYoung = 0.23;
+		if (!GetInputParameter2all(ParamFile_dat, PreParamFile_dat,AdminFile_dat, "Two Pers House Prob Young", "%f", (void*) & (P.TwoPersHouseProbYoung), 1, 1, 0)) P.TwoPersHouseProbYoung = 0.23;
+		if (!GetInputParameter2all(ParamFile_dat, PreParamFile_dat,AdminFile_dat, "One Child Prob Youngest Child Under Five", "%f", (void*) & (P.OneChildProbYoungestChildUnderFive), 1, 1, 0)) P.OneChildProbYoungestChildUnderFive = 0.5;
+		if (!GetInputParameter2all(ParamFile_dat, PreParamFile_dat,AdminFile_dat, "Two Children Prob Youngest Under Five", "%f", (void*) & (P.TwoChildrenProbYoungestUnderFive), 1, 1, 0)) P.TwoChildrenProbYoungestUnderFive = 0.0;
+		if (!GetInputParameter2all(ParamFile_dat, PreParamFile_dat,AdminFile_dat, "Prob Youngest Child Under Five", "%f", (void*) & (P.ProbYoungestChildUnderFive), 1, 1, 0)) P.ProbYoungestChildUnderFive = 0;
+		if (!GetInputParameter2all(ParamFile_dat, PreParamFile_dat,AdminFile_dat, "Zero Child Three Pers Prob", "%f", (void*) & (P.ZeroChildThreePersProb), 1, 1, 0)) P.ZeroChildThreePersProb = 0.25;
+		if (!GetInputParameter2all(ParamFile_dat, PreParamFile_dat,AdminFile_dat, "One Child Four Pers Prob", "%f", (void*) & (P.OneChildFourPersProb), 1, 1, 0)) P.OneChildFourPersProb = 0.2;
+		if (!GetInputParameter2all(ParamFile_dat, PreParamFile_dat,AdminFile_dat, "Young And Single Slope", "%f", (void*) & (P.YoungAndSingleSlope), 1, 1, 0)) P.YoungAndSingleSlope = 0.7;
 		if (!GetInputParameter2all(ParamFile_dat, PreParamFile_dat,AdminFile_dat, "Young And Single", "%i", (void*) & (P.YoungAndSingle), 1, 1, 0)) P.YoungAndSingle = 36;
 		if (!GetInputParameter2all(ParamFile_dat, PreParamFile_dat,AdminFile_dat, "No Child Pers Age", "%i", (void*) & (P.NoChildPersAge), 1, 1, 0)) P.NoChildPersAge = 44;
 		if (!GetInputParameter2all(ParamFile_dat, PreParamFile_dat,AdminFile_dat, "Old Pers Age", "%i", (void*) & (P.OldPersAge), 1, 1, 0)) P.OldPersAge = 60;
-		if (!GetInputParameter2all(ParamFile_dat, PreParamFile_dat,AdminFile_dat, "Three Child Five Pers Prob", "%lf", (void*) & (P.ThreeChildFivePersProb), 1, 1, 0)) P.ThreeChildFivePersProb = 0.5;
+		if (!GetInputParameter2all(ParamFile_dat, PreParamFile_dat,AdminFile_dat, "Three Child Five Pers Prob", "%f", (void*) & (P.ThreeChildFivePersProb), 1, 1, 0)) P.ThreeChildFivePersProb = 0.5;
 		if (!GetInputParameter2all(ParamFile_dat, PreParamFile_dat,AdminFile_dat, "Older Gen Gap", "%i", (void*) & (P.OlderGenGap), 1, 1, 0)) P.OlderGenGap = 19;
 	}
 	// Close input files.
@@ -2103,14 +2103,14 @@ void ReadParams(std::string const& ParamFile, std::string const& PreParamFile, s
 		if (P.FixLocalBeta) P.LocalBeta *= P.R0scale;
 		P.R0 *= P.R0scale;
 		for (int j = 0; j < P.PlaceTypeNum; j++) P.PlaceTypeTrans[j] *= P.R0scale;
-		fprintf(stderr, "Rescaled transmission coefficients by factor of %lg\n", P.R0scale);
+		fprintf(stderr, "Rescaled transmission coefficients by factor of %g\n", P.R0scale);
 	}
 	fprintf(stderr, "Parameters read\n");
 }
 void ReadInterventions(std::string const& IntFile)
 {
 	FILE* dat;
-	double r, s, startt, stopt;
+	float r, s, startt, stopt;
 	int j, k, au, ni, f, nsr;
 	char buf[65536], txt[65536];
 	Intervention CurInterv;
@@ -2159,51 +2159,51 @@ void ReadInterventions(std::string const& IntFile)
 			if (!GetXMLNode(dat, "AUThresh", "parameters", txt, 1)) ERR_CRITICAL("Incomplete intervention parameter specification in intervention file\n");
 			sscanf(txt, "%i", &CurInterv.DoAUThresh);
 			if (!GetXMLNode(dat, "StartTime", "parameters", txt, 1)) ERR_CRITICAL("Incomplete intervention parameter specification in intervention file\n");
-			sscanf(txt, "%lf", &CurInterv.StartTime);
+			sscanf(txt, "%f", &CurInterv.StartTime);
 			startt = CurInterv.StartTime;
 			if (!GetXMLNode(dat, "StopTime", "parameters", txt, 1)) ERR_CRITICAL("Incomplete intervention parameter specification in intervention file\n");
-			sscanf(txt, "%lf", &CurInterv.StopTime);
+			sscanf(txt, "%f", &CurInterv.StopTime);
 			stopt = CurInterv.StopTime;
 			if (!GetXMLNode(dat, "MinDuration", "parameters", txt, 1)) ERR_CRITICAL("Incomplete intervention parameter specification in intervention file\n");
-			sscanf(txt, "%lf", &CurInterv.MinDuration);
+			sscanf(txt, "%f", &CurInterv.MinDuration);
 			CurInterv.MinDuration *= DAYS_PER_YEAR;
 			if (!GetXMLNode(dat, "RepeatInterval", "parameters", txt, 1)) ERR_CRITICAL("Incomplete intervention parameter specification in intervention file\n");
-			sscanf(txt, "%lf", &CurInterv.RepeatInterval);
+			sscanf(txt, "%f", &CurInterv.RepeatInterval);
 			CurInterv.RepeatInterval *= DAYS_PER_YEAR;
 			if (!GetXMLNode(dat, "MaxPrevAtStart", "parameters", txt, 1)) ERR_CRITICAL("Incomplete intervention parameter specification in intervention file\n");
-			sscanf(txt, "%lf", &CurInterv.StartThresholdHigh);
+			sscanf(txt, "%f", &CurInterv.StartThresholdHigh);
 			if (!GetXMLNode(dat, "MinPrevAtStart", "parameters", txt, 1)) ERR_CRITICAL("Incomplete intervention parameter specification in intervention file\n");
-			sscanf(txt, "%lf", &CurInterv.StartThresholdLow);
+			sscanf(txt, "%f", &CurInterv.StartThresholdLow);
 			if (!GetXMLNode(dat, "MaxPrevAtStop", "parameters", txt, 1)) ERR_CRITICAL("Incomplete intervention parameter specification in intervention file\n");
-			sscanf(txt, "%lf", &CurInterv.StopThreshold);
+			sscanf(txt, "%f", &CurInterv.StopThreshold);
 			if (GetXMLNode(dat, "NoStartAfterMinDur", "parameters", txt, 1))
 				sscanf(txt, "%i", &CurInterv.NoStartAfterMin);
 			else
 				CurInterv.NoStartAfterMin = 0;
 			if (!GetXMLNode(dat, "Level", "parameters", txt, 1)) ERR_CRITICAL("Incomplete intervention parameter specification in intervention file\n");
-			sscanf(txt, "%lf", &CurInterv.Level);
+			sscanf(txt, "%f", &CurInterv.Level);
 			if (GetXMLNode(dat, "LevelCellVar", "parameters", txt, 1))
-				sscanf(txt, "%lf", &CurInterv.LevelCellVar);
+				sscanf(txt, "%f", &CurInterv.LevelCellVar);
 			else
 				CurInterv.LevelCellVar = 0;
 			if (GetXMLNode(dat, "LevelAUVar", "parameters", txt, 1))
-				sscanf(txt, "%lf", &CurInterv.LevelAUVar);
+				sscanf(txt, "%f", &CurInterv.LevelAUVar);
 			else
 				CurInterv.LevelCellVar = 0;
 			if (GetXMLNode(dat, "LevelCountryVar", "parameters", txt, 1))
-				sscanf(txt, "%lf", &CurInterv.LevelCountryVar);
+				sscanf(txt, "%f", &CurInterv.LevelCountryVar);
 			else
 				CurInterv.LevelCellVar = 0;
 			if (GetXMLNode(dat, "LevelClustering", "parameters", txt, 1))
-				sscanf(txt, "%lf", &CurInterv.LevelClustering);
+				sscanf(txt, "%f", &CurInterv.LevelClustering);
 			else
 				CurInterv.LevelClustering = 0;
 			if (GetXMLNode(dat, "ControlParam", "parameters", txt, 1))
-				sscanf(txt, "%lf", &CurInterv.ControlParam);
+				sscanf(txt, "%f", &CurInterv.ControlParam);
 			else
 				CurInterv.ControlParam = 0;
 			if (GetXMLNode(dat, "TimeOffset", "parameters", txt, 1))
-				sscanf(txt, "%lf", &CurInterv.TimeOffset);
+				sscanf(txt, "%f", &CurInterv.TimeOffset);
 			else
 				CurInterv.TimeOffset = 0;
 
@@ -2249,8 +2249,8 @@ void ReadInterventions(std::string const& IntFile)
 							{
 								AdUnits[au].InterventionList[AdUnits[au].NI] = CurInterv;
 								AdUnits[au].InterventionList[AdUnits[au].NI].Level = r;
-								AdUnits[au].InterventionList[AdUnits[au].NI].StartTime = startt + ((double)k) * (stopt - startt);
-								AdUnits[au].InterventionList[AdUnits[au].NI].StopTime = stopt + ((double)k) * (stopt - startt);
+								AdUnits[au].InterventionList[AdUnits[au].NI].StartTime = startt + ((float)k) * (stopt - startt);
+								AdUnits[au].InterventionList[AdUnits[au].NI].StopTime = stopt + ((float)k) * (stopt - startt);
 								AdUnits[au].NI++;
 							}
 						}
@@ -2270,8 +2270,8 @@ void ReadInterventions(std::string const& IntFile)
 							{
 								AdUnits[au].InterventionList[AdUnits[au].NI] = CurInterv;
 								AdUnits[au].InterventionList[AdUnits[au].NI].Level = r;
-								AdUnits[au].InterventionList[AdUnits[au].NI].StartTime = startt + ((double)k) * (stopt - startt);
-								AdUnits[au].InterventionList[AdUnits[au].NI].StopTime = stopt + ((double)k) * (stopt - startt);
+								AdUnits[au].InterventionList[AdUnits[au].NI].StartTime = startt + ((float)k) * (stopt - startt);
+								AdUnits[au].InterventionList[AdUnits[au].NI].StopTime = stopt + ((float)k) * (stopt - startt);
 								AdUnits[au].NI++;
 							}
 						}
@@ -2297,8 +2297,8 @@ void ReadInterventions(std::string const& IntFile)
 							{
 								AdUnits[au].InterventionList[AdUnits[au].NI] = CurInterv;
 								AdUnits[au].InterventionList[AdUnits[au].NI].Level = r;
-								AdUnits[au].InterventionList[AdUnits[au].NI].StartTime = startt + ((double)k) * (stopt - startt);
-								AdUnits[au].InterventionList[AdUnits[au].NI].StopTime = stopt + ((double)k) * (stopt - startt);
+								AdUnits[au].InterventionList[AdUnits[au].NI].StartTime = startt + ((float)k) * (stopt - startt);
+								AdUnits[au].InterventionList[AdUnits[au].NI].StopTime = stopt + ((float)k) * (stopt - startt);
 								AdUnits[au].NI++;
 							}
 						}
@@ -2356,7 +2356,7 @@ void ReadAirTravel(std::string const& air_travel_file, std::string const& output
 	int i, j, k, l;
 	float sc, t, t2;
 	float* buf;
-	double traf;
+	float traf;
 	std::string outname;
 	FILE* dat;
 
@@ -2365,18 +2365,18 @@ void ReadAirTravel(std::string const& air_travel_file, std::string const& output
 	if(fscanf(dat, "%i %i", &P.Nairports, &P.Air_popscale) != 2) {
         ERR_CRITICAL("fscanf failed in void ReadAirTravel\n");
     }
-	sc = (float)((double)P.PopSize / (double)P.Air_popscale);
+	sc = (float)((float)P.PopSize / (float)P.Air_popscale);
 	if (P.Nairports > MAX_AIRPORTS) ERR_CRITICAL("Too many airports\n");
 	if (P.Nairports < 2) ERR_CRITICAL("Too few airports\n");
 	buf = (float*)Memory::xcalloc(P.Nairports + 1, sizeof(float));
 	Airports = (Airport*)Memory::xcalloc(P.Nairports, sizeof(Airport));
 	for (i = 0; i < P.Nairports; i++)
 	{
-		if(fscanf(dat, "%f %f %lf", &(Airports[i].loc.x), &(Airports[i].loc.y), &traf) != 3) {
+		if(fscanf(dat, "%f %f %f", &(Airports[i].loc.x), &(Airports[i].loc.y), &traf) != 3) {
             ERR_CRITICAL("fscanf failed in void ReadAirTravel\n");
         }
 		traf *= (P.AirportTrafficScale * sc);
-		if (!P.SpatialBoundingBox.inside(Geometry::Vector2d(Airports[i].loc)))
+		if (!P.SpatialBoundingBox.inside(Geometry::Vector2f(Airports[i].loc)))
 		{
 			Airports[i].loc.x = Airports[i].loc.y = -1;
 			Airports[i].total_traffic = 0;
@@ -2465,7 +2465,7 @@ void ReadAirTravel(std::string const& air_travel_file, std::string const& output
 	{
 		for (j = k = 0; k < 128; k++)
 		{
-			t = (float)((double)k / 128);
+			t = (float)((float)k / 128);
 			while (Airports[i].prop_traffic[j] < t) j++;
 			Airports[i].Inv_prop_traffic[k] = j;
 		}
@@ -2835,7 +2835,7 @@ void InitModel(int run) // passing run number so we can save run number in the i
 		}
 	}
 
-	for (int i = 0; i < P.NumSeedLocations; i++) NumSeedingInfections_byLocation[i] = (int) (((double) P.NumInitialInfections[i]) * P.InitialInfectionsAdminUnitWeight[i]* P.SeedingScaling +0.5);
+	for (int i = 0; i < P.NumSeedLocations; i++) NumSeedingInfections_byLocation[i] = (int) (((float) P.NumInitialInfections[i]) * P.InitialInfectionsAdminUnitWeight[i]* P.SeedingScaling +0.5);
 	SeedInfection(0, NumSeedingInfections_byLocation, 0, run);
 	P.ControlPropCasesId = P.PreAlertControlPropCasesId;
 	P.TreatTimeStart = 1e10;
@@ -2865,7 +2865,7 @@ void InitModel(int run) // passing run number so we can save run number in the i
 	fprintf(stderr, "Finished InitModel.\n");
 }
 
-void SeedInfection(double t, int* NumSeedingInfections_byLocation, int rf, int run) //adding run number to pass it to event log
+void SeedInfection(float t, int* NumSeedingInfections_byLocation, int rf, int run) //adding run number to pass it to event log
 {
 	/* *NumSeedingInfections_byLocation is an array of the number of seeding infections by location. During runtime, usually just a single int (given by a poisson distribution)*/
 	/*rf set to 0 when initializing model, otherwise set to 1 during runtime. */
@@ -2888,7 +2888,7 @@ void SeedInfection(double t, int* NumSeedingInfections_byLocation, int rf, int r
 			m = 0;
 			for (k = 0; (k < NumSeedingInfections_byLocation[i]) && (m < 10000); k++)
 			{
-				l = Mcells[j].members[(int)(ranf() * ((double)Mcells[j].n))]; //// randomly choose member of microcell j. Name this member l
+				l = Mcells[j].members[(int)(ranf() * ((float)Mcells[j].n))]; //// randomly choose member of microcell j. Name this member l
 				if (Hosts[l].inf == InfStat_Susceptible) //// If Host l is uninfected.
 				{
 					if ((CalcPersonSusc(l, 0, 0, 0) > 0) && (Hosts[l].age <= P.MaxAgeForInitialInfection) && (P.CareHomeAllowInitialInfections || P.CareHomePlaceType<0 || Hosts[l].PlaceLinks[P.CareHomePlaceType]<0))
@@ -2916,7 +2916,7 @@ void SeedInfection(double t, int* NumSeedingInfections_byLocation, int rf, int r
 				m = 0;
 				do
 				{
-					l = (int)(ranf() * ((double)P.PopSize));
+					l = (int)(ranf() * ((float)P.PopSize));
 					j = Hosts[l].mcell;
 					//fprintf(stderr,"%i ",AdUnits[Mcells[j].adunit].id);
 				} while ((Mcells[j].n < NumSeedingInfections_byLocation[i]) || (Mcells[j].n > P.MaxPopDensForInitialInfection)
@@ -2924,7 +2924,7 @@ void SeedInfection(double t, int* NumSeedingInfections_byLocation, int rf, int r
 					|| ((P.InitialInfectionsAdminUnit[i] > 0) && ((AdUnits[Mcells[j].adunit].id % P.AdunitLevel1Mask) / P.AdunitLevel1Divisor != (P.InitialInfectionsAdminUnit[i] % P.AdunitLevel1Mask) / P.AdunitLevel1Divisor)));
 				for (k = 0; (k < NumSeedingInfections_byLocation[i]) && (m < 10000); k++)
 				{
-					l = Mcells[j].members[(int)(ranf() * ((double)Mcells[j].n))];
+					l = Mcells[j].members[(int)(ranf() * ((float)Mcells[j].n))];
 					if (Hosts[l].inf == InfStat_Susceptible)
 					{
 						if ((CalcPersonSusc(l, 0, 0, 0) > 0) && (Hosts[l].age <= P.MaxAgeForInitialInfection) && (P.CareHomeAllowInitialInfections || P.CareHomePlaceType < 0 || Hosts[l].PlaceLinks[P.CareHomePlaceType] < 0))
@@ -2954,13 +2954,13 @@ void SeedInfection(double t, int* NumSeedingInfections_byLocation, int rf, int r
 			{
 				do
 				{
-					l = (int)(ranf() * ((double)P.PopSize));
+					l = (int)(ranf() * ((float)P.PopSize));
 					j = Hosts[l].mcell;
 					//fprintf(stderr,"@@ %i %i ",AdUnits[Mcells[j].adunit].id, (int)(AdUnits[Mcells[j].adunit].id / P.CountryDivisor));
 				} while ((Mcells[j].n == 0) || (Mcells[j].n > P.MaxPopDensForInitialInfection)
 					|| (Mcells[j].n < P.MinPopDensForInitialInfection)
 					|| ((P.InitialInfectionsAdminUnit[i] > 0) && ((AdUnits[Mcells[j].adunit].id % P.AdunitLevel1Mask) / P.AdunitLevel1Divisor != (P.InitialInfectionsAdminUnit[i] % P.AdunitLevel1Mask) / P.AdunitLevel1Divisor)));
-				l = Mcells[j].members[(int)(ranf() * ((double)Mcells[j].n))];
+				l = Mcells[j].members[(int)(ranf() * ((float)Mcells[j].n))];
 				if (Hosts[l].inf == InfStat_Susceptible)
 				{
 					if ((CalcPersonSusc(l, 0, 0, 0) > 0) && (Hosts[l].age<=P.MaxAgeForInitialInfection) && (P.CareHomeAllowInitialInfections || P.CareHomePlaceType < 0 || Hosts[l].PlaceLinks[P.CareHomePlaceType] < 0))
@@ -2990,8 +2990,8 @@ void SeedInfection(double t, int* NumSeedingInfections_byLocation, int rf, int r
 int RunModel(int run, std::string const& snapshot_save_file, std::string const& snapshot_load_file, std::string const& output_file_base)
 {
 	int j, k, l, fs, fs2, NumSeedingInfections, NumSeedingInfections_byLocation[MAX_NUM_SEED_LOCATIONS] /*Denotes either Num imported Infections given rate ir, or number false positive "infections"*/;
-	double ir; // infection import rate?;
-	double t, cI, lcI, t2;
+	float ir; // infection import rate?;
+	float t, cI, lcI, t2;
 	unsigned short int ts;
 	int continueEvents = 1;
 
@@ -3031,7 +3031,7 @@ int RunModel(int run, std::string const& snapshot_save_file, std::string const& 
 	if (!snapshot_load_file.empty())
 	{
 		P.ts_age = (int)(P.SnapshotLoadTime * P.TimeStepsPerDay);
-		t = ((double)P.ts_age) * P.TimeStep;
+		t = ((float)P.ts_age) * P.TimeStep;
 	}
 	else
 	{
@@ -3047,7 +3047,7 @@ int RunModel(int run, std::string const& snapshot_save_file, std::string const& 
 		RecordSample(t, ns - 1, output_file_base);
 		CalibrationThresholdCheck(t, ns - 1);
 
-		fprintf(stderr, "\r    t=%lg   %i    %i|%i    %i     %i [=%i]  %i (%lg %lg %lg)   %lg    ", t,
+		fprintf(stderr, "\r    t=%g   %i    %i|%i    %i     %i [=%i]  %i (%g %g %g)   %g    ", t,
 			State.S, State.L, State.I, State.R, State.D, State.S + State.L + State.I + State.R + State.D, State.cumD, State.cumT, State.cumV, State.cumVG, sqrt(State.maxRad2) / 1000); //added State.cumVG
 		if (!InterruptRun)
 		{
@@ -3085,14 +3085,14 @@ int RunModel(int run, std::string const& snapshot_save_file, std::string const& 
 					}
 					if (P.FalsePositivePerCapitaIncidence > 0)
 					{
-						NumSeedingInfections = (int)ignpoi(P.TimeStep * P.FalsePositivePerCapitaIncidence * ((double)P.PopSize));
+						NumSeedingInfections = (int)ignpoi(P.TimeStep * P.FalsePositivePerCapitaIncidence * ((float)P.PopSize));
 						if (NumSeedingInfections > 0)
 						{
 							for (k = 0; k < NumSeedingInfections; k++)
 							{
 								do
 								{
-									l = (int)(((double)P.PopSize) * ranf()); //// choose person l randomly from entire population. (but change l if while condition not satisfied?)
+									l = (int)(((float)P.PopSize) * ranf()); //// choose person l randomly from entire population. (but change l if while condition not satisfied?)
 								} while ((abs(Hosts[l].inf) == InfStat_Dead) || (ranf() > P.FalsePositiveAgeRate[HOST_AGE_GROUP(l)]));
 								DoFalseCase(l, t, ts, 0);
 							}
@@ -3119,7 +3119,7 @@ int RunModel(int run, std::string const& snapshot_save_file, std::string const& 
 				if (!snapshot_save_file.empty() && (t <= P.SnapshotSaveTime) && (t + P.TimeStep > P.SnapshotSaveTime)) SaveSnapshot(snapshot_save_file);
 				if (t > P.TreatNewCoursesStartTime) P.TreatMaxCourses += P.TimeStep * P.TreatNewCoursesRate;
 				if ((t > P.VaccNewCoursesStartTime) && (t < P.VaccNewCoursesEndTime)) P.VaccMaxCourses += P.TimeStep * P.VaccNewCoursesRate;
-				cI = ((double)(State.S)) / ((double)P.PopSize);
+				cI = ((float)(State.S)) / ((float)P.PopSize);
 				if ((lcI - cI) > 0.2)
 				{
 					lcI = cI;
@@ -3187,7 +3187,7 @@ void SaveDistribs(std::string const& output_file_base)
 	int i, j, k;
 	FILE* dat;
 	std::string outname;
-	double s;
+	float s;
 
 	if (P.DoPlaces)
 	{
@@ -3603,11 +3603,11 @@ void SaveResults(std::string const& output_file_base)
 void SaveSummaryResults(std::string const& output_file_base) //// calculates and saves summary results (called for average of extinct and non-extinct realisation time series - look in main)
 {
 	int i, j;
-	double c, t;
+	float c, t;
 	FILE* dat;
 	std::string outname;
 
-	c = 1 / ((double)(P.NRactE + P.NRactNE));
+	c = 1 / ((float)(P.NRactE + P.NRactNE));
 
 	if (P.OutputNonSeverity)
 	{
@@ -3616,7 +3616,7 @@ void SaveSummaryResults(std::string const& output_file_base) //// calculates and
 		//// set colnames
 		fprintf(dat, "t\tS\tL\tI\tR\tD\tincI\tincR\tincD\tincC\tincDC\tincTC\tcumT\tcumTmax\tcumTP\tcumV\tcumVmax\tExtinct\trmsRad\tmaxRad\tvS\tvI\tvR\tvD\tvincI\tvincR\tvincFC\tvincC\tvincDC\tvincTC\tvrmsRad\tvmaxRad\t\t%i\t%i\t%.10f\t%.10f\t%.10f\t\t%.10f\t%.10f\t%.10f\t%.10f\n",
 			P.NRactNE, P.NRactE, P.R0household, P.R0places, P.R0spatial, c * PeakHeightSum, c * PeakHeightSS - c * c * PeakHeightSum * PeakHeightSum, c * PeakTimeSum, c * PeakTimeSS - c * c * PeakTimeSum * PeakTimeSum);
-		c = 1 / ((double)P.NRactual);
+		c = 1 / ((float)P.NRactual);
 
 		//// populate table
 		for(i = 0; i < P.NumSamples; i++)
@@ -3653,13 +3653,13 @@ void SaveSummaryResults(std::string const& output_file_base) //// calculates and
 		fprintf(dat, "\n");
 		for(i = 0; i < P.NumSamples; i++)
 			{
-			fprintf(dat, "%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf",
+			fprintf(dat, "%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f",
 				c * TSMean[i].t, c * TSMean[i].S, c * TSMean[i].incC, c * TSMean[i].incTC, c * TSMean[i].incFC,
 				c * TSMean[i].cumT, c * TSMean[i].cumUT, c * TSMean[i].cumTP, c * TSMean[i].cumV, c * TSMean[i].incHQ,
 				c * TSMean[i].incAC, c * TSMean[i].incAH, c * TSMean[i].incAA, c * TSMean[i].incACS,
 				c * TSMean[i].incAPC, c * TSMean[i].incAPA, c * TSMean[i].incAPCS,c*TSMean[i].PropSocDist);
-			for(j = 0; j < NUM_PLACE_TYPES; j++) fprintf(dat, "\t%lf", c * TSMean[i].PropPlacesClosed[j]);
-			fprintf(dat, "\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf",
+			for(j = 0; j < NUM_PLACE_TYPES; j++) fprintf(dat, "\t%f", c * TSMean[i].PropPlacesClosed[j]);
+			fprintf(dat, "\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f",
 				c * TSVar[i].S - c * c * TSMean[i].S * TSMean[i].S,
 				c * TSVar[i].incC - c * c * TSMean[i].incC * TSMean[i].incC,
 				c * TSVar[i].incTC - c * c * TSMean[i].incTC * TSMean[i].incTC,
@@ -3668,7 +3668,7 @@ void SaveSummaryResults(std::string const& output_file_base) //// calculates and
 				c * TSVar[i].cumUT - c * c * TSMean[i].cumUT * TSMean[i].cumUT,
 				c * TSVar[i].cumTP - c * c * TSMean[i].cumTP * TSMean[i].cumTP,
 				c * TSVar[i].cumV - c * c * TSMean[i].cumV * TSMean[i].cumV);
-			for(j = 0; j < NUM_PLACE_TYPES; j++) fprintf(dat, "\t%lf", TSVar[i].PropPlacesClosed[j]);
+			for(j = 0; j < NUM_PLACE_TYPES; j++) fprintf(dat, "\t%f", TSVar[i].PropPlacesClosed[j]);
 			fprintf(dat, "\n");
 			}
 		fclose(dat);
@@ -3835,10 +3835,10 @@ void SaveSummaryResults(std::string const& output_file_base) //// calculates and
 		fprintf(dat, "\n");
 		for (i = 0; i < P.NumSamples; i++)
 		{
-			fprintf(dat, "%lf\t%lf\t%lf\t%lf", c * TSMean[i].t, c * TSMean[i].Rdenom, c* TSMean[i].meanTG, c* TSMean[i].meanSI);
-			for (j = 0; j < INFECT_TYPE_MASK; j++) fprintf(dat, "\t%lf", c * TSMean[i].Rtype[j]);
-			for (j = 0; j < INFECT_TYPE_MASK; j++) fprintf(dat, "\t%lf", c * TSMean[i].incItype[j]);
-			for (j = 0; j < NUM_AGE_GROUPS; j++) fprintf(dat, "\t%lf", c * TSMean[i].Rage[j]);
+			fprintf(dat, "%f\t%f\t%f\t%f", c * TSMean[i].t, c * TSMean[i].Rdenom, c* TSMean[i].meanTG, c* TSMean[i].meanSI);
+			for (j = 0; j < INFECT_TYPE_MASK; j++) fprintf(dat, "\t%f", c * TSMean[i].Rtype[j]);
+			for (j = 0; j < INFECT_TYPE_MASK; j++) fprintf(dat, "\t%f", c * TSMean[i].incItype[j]);
+			for (j = 0; j < NUM_AGE_GROUPS; j++) fprintf(dat, "\t%f", c * TSMean[i].Rage[j]);
 			fprintf(dat, "\n");
 		}
 		fclose(dat);
@@ -3917,7 +3917,7 @@ void SaveSummaryResults(std::string const& output_file_base) //// calculates and
 		if (!(dat = fopen(outname.c_str(), "wb"))) ERR_CRITICAL("Unable to open severity output file\n");
 		fprintf(dat, "t\tPropSocDist\tRt\tTG\tSI\tS\tI\tR\tincI\tincC\tMild\tILI\tSARI\tCritical\tCritRecov\tSARIP\tCriticalP\tCritRecovP\tprevQuarNotInfected\tprevQuarNotSymptomatic\tincMild\tincILI\tincSARI\tincCritical\tincCritRecov\tincSARIP\tincCriticalP\tincCritRecovP\tincDeath\tincDeath_ILI\tincDeath_SARI\tincDeath_Critical\tcumMild\tcumILI\tcumSARI\tcumCritical\tcumCritRecov\tcumDeath\tcumDeath_ILI\tcumDeath_SARI\tcumDeath_Critical\t");
 		fprintf(dat, "PropSocDist_v\tRt_v\tTG_v\tSI_v\tS_v\tI_v\tR_v\tincI_v\tincC_v\tMild_v\tILI_v\tSARI_v\tCritical_v\tCritRecov_v\tincMild_v\tincILI_v\tincSARI_v\tincCritical_v\tincCritRecov_v\tincDeath_v\tincDeath_ILI_v\tincDeath_SARI_v\tincDeath_Critical_v\tcumMild_v\tcumILI_v\tcumSARI_v\tcumCritical_v\tcumCritRecov_v\tcumDeath_v\tcumDeath_ILI_v\tcumDeath_SARI_v\tcumDeath_Critical_v\n");
-		double SARI, Critical, CritRecov, incSARI, incCritical, incCritRecov, sc1, sc2,sc3,sc4; //this stuff corrects bed prevalence for exponentially distributed time to test results in hospital
+		float SARI, Critical, CritRecov, incSARI, incCritical, incCritRecov, sc1, sc2,sc3,sc4; //this stuff corrects bed prevalence for exponentially distributed time to test results in hospital
 		sc1 = (P.Mean_TimeToTest > 0) ? exp(-1.0 / P.Mean_TimeToTest) : 0.0;
 		sc2 = (P.Mean_TimeToTest > 0) ? exp(-P.Mean_TimeToTestOffset / P.Mean_TimeToTest) : 0.0;
 		sc3 = (P.Mean_TimeToTest > 0) ? exp(-P.Mean_TimeToTestCriticalOffset / P.Mean_TimeToTest) : 0.0;
@@ -3986,14 +3986,14 @@ void SaveSummaryResults(std::string const& output_file_base) //// calculates and
 		fclose(dat);
 		if (P.OutputSeverityAge)
 		{
-			double* SARI_a, * Critical_a, * CritRecov_a, * incSARI_a, * incCritical_a, * incCritRecov_a, sc1a, sc2a, sc3a, sc4a; //this stuff corrects bed prevalence for exponentially distributed time to test results in hospital
+			float* SARI_a, * Critical_a, * CritRecov_a, * incSARI_a, * incCritical_a, * incCritRecov_a, sc1a, sc2a, sc3a, sc4a; //this stuff corrects bed prevalence for exponentially distributed time to test results in hospital
 
-			SARI_a = (double*)Memory::xcalloc(NUM_AGE_GROUPS, sizeof(double));
-			Critical_a = (double*)Memory::xcalloc(NUM_AGE_GROUPS, sizeof(double));
-			CritRecov_a = (double*)Memory::xcalloc(NUM_AGE_GROUPS, sizeof(double));
-			incSARI_a = (double*)Memory::xcalloc(NUM_AGE_GROUPS, sizeof(double));
-			incCritical_a = (double*)Memory::xcalloc(NUM_AGE_GROUPS, sizeof(double));
-			incCritRecov_a = (double*)Memory::xcalloc(NUM_AGE_GROUPS, sizeof(double));
+			SARI_a = (float*)Memory::xcalloc(NUM_AGE_GROUPS, sizeof(float));
+			Critical_a = (float*)Memory::xcalloc(NUM_AGE_GROUPS, sizeof(float));
+			CritRecov_a = (float*)Memory::xcalloc(NUM_AGE_GROUPS, sizeof(float));
+			incSARI_a = (float*)Memory::xcalloc(NUM_AGE_GROUPS, sizeof(float));
+			incCritical_a = (float*)Memory::xcalloc(NUM_AGE_GROUPS, sizeof(float));
+			incCritRecov_a = (float*)Memory::xcalloc(NUM_AGE_GROUPS, sizeof(float));
 			sc1a = (P.Mean_TimeToTest > 0) ? exp(-1.0 / P.Mean_TimeToTest) : 0.0;
 			sc2a = (P.Mean_TimeToTest > 0) ? exp(-P.Mean_TimeToTestOffset / P.Mean_TimeToTest) : 0.0;
 			sc3a = (P.Mean_TimeToTest > 0) ? exp(-P.Mean_TimeToTestCriticalOffset / P.Mean_TimeToTest) : 0.0;
@@ -4108,14 +4108,14 @@ void SaveSummaryResults(std::string const& output_file_base) //// calculates and
 		}
 		if ((P.DoAdUnits) && (P.OutputSeverityAdminUnit))
 		{
-			double* SARI_a, * Critical_a, * CritRecov_a, * incSARI_a, * incCritical_a, * incCritRecov_a, sc1a, sc2a,sc3a,sc4a; //this stuff corrects bed prevalence for exponentially distributed time to test results in hospital
+			float* SARI_a, * Critical_a, * CritRecov_a, * incSARI_a, * incCritical_a, * incCritRecov_a, sc1a, sc2a,sc3a,sc4a; //this stuff corrects bed prevalence for exponentially distributed time to test results in hospital
 
-			SARI_a = (double*)Memory::xcalloc(MAX_ADUNITS, sizeof(double));
-			Critical_a = (double*)Memory::xcalloc(MAX_ADUNITS, sizeof(double));
-			CritRecov_a = (double*)Memory::xcalloc(MAX_ADUNITS, sizeof(double));
-			incSARI_a = (double*)Memory::xcalloc(MAX_ADUNITS, sizeof(double));
-			incCritical_a = (double*)Memory::xcalloc(MAX_ADUNITS, sizeof(double));
-			incCritRecov_a = (double*)Memory::xcalloc(MAX_ADUNITS, sizeof(double));
+			SARI_a = (float*)Memory::xcalloc(MAX_ADUNITS, sizeof(float));
+			Critical_a = (float*)Memory::xcalloc(MAX_ADUNITS, sizeof(float));
+			CritRecov_a = (float*)Memory::xcalloc(MAX_ADUNITS, sizeof(float));
+			incSARI_a = (float*)Memory::xcalloc(MAX_ADUNITS, sizeof(float));
+			incCritical_a = (float*)Memory::xcalloc(MAX_ADUNITS, sizeof(float));
+			incCritRecov_a = (float*)Memory::xcalloc(MAX_ADUNITS, sizeof(float));
 			sc1a = (P.Mean_TimeToTest > 0) ? exp(-1.0 / P.Mean_TimeToTest) : 0.0;
 			sc2a = (P.Mean_TimeToTest > 0) ? exp(-P.Mean_TimeToTestOffset / P.Mean_TimeToTest) : 0.0;
 			sc3a = (P.Mean_TimeToTest > 0) ? exp(-P.Mean_TimeToTestCriticalOffset / P.Mean_TimeToTest) : 0.0;
@@ -4318,7 +4318,7 @@ void LoadSnapshot(std::string const& snapshot_load_file)
 	int i, j, * CellMemberArray, * CellSuscMemberArray;
 	int32_t l;
 	long long CM_offset, CSM_offset;
-	double t;
+	float t;
 	int** Array_InvCDF;
 	float* Array_tot_prob, ** Array_cum_trans, ** Array_max_trans;
 
@@ -4344,8 +4344,8 @@ void LoadSnapshot(std::string const& snapshot_load_file)
 	fread_big((void*)& i, sizeof(int), 1, dat); if (i != P.nch) ERR_CRITICAL("Incorrect nch in snapshot file.\n");
 	fread_big((void*)& l, sizeof(int32_t), 1, dat); if (l != P.setupSeed1) ERR_CRITICAL("Incorrect setupSeed1 in snapshot file.\n");
 	fread_big((void*)& l, sizeof(int32_t), 1, dat); if (l != P.setupSeed2) ERR_CRITICAL("Incorrect setupSeed2 in snapshot file.\n");
-	fread_big((void*)& t, sizeof(double), 1, dat); if (t != P.TimeStep) ERR_CRITICAL("Incorrect TimeStep in snapshot file.\n");
-	fread_big((void*) & (P.SnapshotLoadTime), sizeof(double), 1, dat);
+	fread_big((void*)& t, sizeof(float), 1, dat); if (t != P.TimeStep) ERR_CRITICAL("Incorrect TimeStep in snapshot file.\n");
+	fread_big((void*) & (P.SnapshotLoadTime), sizeof(float), 1, dat);
 	P.NumSamples = 1 + (int)ceil((P.SampleTime - P.SnapshotLoadTime) / P.SampleStep);
 	fprintf(stderr, ".");
 	fread_big((void*)& CellMemberArray, sizeof(int*), 1, dat);
@@ -4420,9 +4420,9 @@ void SaveSnapshot(std::string const& snapshot_save_file)
 	fprintf(stderr, "## %i\n", i++);
 	fwrite_big((void*) & (P.setupSeed2), sizeof(int32_t), 1, dat);
 	fprintf(stderr, "## %i\n", i++);
-	fwrite_big((void*) & (P.TimeStep), sizeof(double), 1, dat);
+	fwrite_big((void*) & (P.TimeStep), sizeof(float), 1, dat);
 	fprintf(stderr, "## %i\n", i++);
-	fwrite_big((void*) & (P.SnapshotSaveTime), sizeof(double), 1, dat);
+	fwrite_big((void*) & (P.SnapshotSaveTime), sizeof(float), 1, dat);
 	fprintf(stderr, "## %i\n", i++);
 	fwrite_big((void*) & (State.CellMemberArray), sizeof(int*), 1, dat);
 	fprintf(stderr, "## %i\n", i++);
@@ -4505,7 +4505,7 @@ int ChooseTriggerVariableAndValue(int AdUnit)
 	if (P.DoGlobalTriggers)
 	{
 		if (P.DoPerCapitaTriggers)
-			VariableAndValue = (int)floor(((double)State.trigDetectedCases) * P.GlobalIncThreshPop / ((double)P.PopSize));
+			VariableAndValue = (int)floor(((float)State.trigDetectedCases) * P.GlobalIncThreshPop / ((float)P.PopSize));
 		else
 			VariableAndValue = State.trigDetectedCases;
 	}
@@ -4514,14 +4514,14 @@ int ChooseTriggerVariableAndValue(int AdUnit)
 
 	return VariableAndValue;
 }
-double ChooseThreshold(int AdUnit, double WhichThreshold) //// point is that this threshold needs to be generalised, so this is likely insufficient.
+float ChooseThreshold(int AdUnit, float WhichThreshold) //// point is that this threshold needs to be generalised, so this is likely insufficient.
 {
-	double Threshold = 0;
+	float Threshold = 0;
 	if (P.DoGlobalTriggers) Threshold = WhichThreshold;
 	else if (P.DoAdminTriggers)
 	{
 		if (P.DoPerCapitaTriggers)
-			Threshold = (int)ceil(((double)(AdUnits[AdUnit].n * WhichThreshold)) / P.IncThreshPop);
+			Threshold = (int)ceil(((float)(AdUnits[AdUnit].n * WhichThreshold)) / P.IncThreshPop);
 		else
 			Threshold = WhichThreshold;
 	}
@@ -4529,7 +4529,7 @@ double ChooseThreshold(int AdUnit, double WhichThreshold) //// point is that thi
 }
 
 
-void UpdateEfficaciesAndComplianceProportions(double t)
+void UpdateEfficaciesAndComplianceProportions(float t)
 {
 	//// **** social distancing
 	for (int ChangeTime = 0; ChangeTime < P.Num_SD_ChangeTimes; ChangeTime++)
@@ -4610,7 +4610,7 @@ void UpdateEfficaciesAndComplianceProportions(double t)
 				// ensure that new duration doesn't go over next change time. Judgement call here - talk to Neil if this is what he wants.
 				if ((ChangeTime < P.Num_PC_ChangeTimes - 1) && (P.PlaceCloseTimeStart + P.PlaceCloseDuration >= P.PC_ChangeTimes[ChangeTime + 1]))
 					P.PlaceCloseDuration = P.PC_ChangeTimes[ChangeTime + 1] - P.PC_ChangeTimes[ChangeTime]; // -1;
-				//fprintf(stderr, "\nt=%lf, n=%i (%i)  PlaceCloseDuration = %lf  (%lf) \n", t, ChangeTime, P.Num_PC_ChangeTimes, P.PlaceCloseDuration, P.PC_ChangeTimes[ChangeTime+1]);
+				//fprintf(stderr, "\nt=%f, n=%i (%i)  PlaceCloseDuration = %f  (%f) \n", t, ChangeTime, P.Num_PC_ChangeTimes, P.PlaceCloseDuration, P.PC_ChangeTimes[ChangeTime+1]);
 			}
 	}
 
@@ -4633,7 +4633,7 @@ void RecordAdminAgeBreakdowns(int t_int)
 		{
 			// Record incidence. Need new total minus old total (same as minus old total plus new total).
 			// First subtract old total before reset, collated and updated.
-			TimeSeries[t_int].incInf_age_adunit[AgeGroup][AdUnit] = (double)(-State.cumInf_age_adunit[AgeGroup][AdUnit]);
+			TimeSeries[t_int].incInf_age_adunit[AgeGroup][AdUnit] = (float)(-State.cumInf_age_adunit[AgeGroup][AdUnit]);
 
 			// reset totals
 			State.prevInf_age_adunit[AgeGroup][AdUnit] = 0;
@@ -4651,7 +4651,7 @@ void RecordAdminAgeBreakdowns(int t_int)
 			TimeSeries[t_int].cumInf_age_adunit [AgeGroup][AdUnit] = State.cumInf_age_adunit [AgeGroup][AdUnit];
 
 			// Record incidence. Need new total minus old total. Add new total
-			TimeSeries[t_int].incInf_age_adunit[AgeGroup][AdUnit] += (double)(State.cumInf_age_adunit[AgeGroup][AdUnit]);
+			TimeSeries[t_int].incInf_age_adunit[AgeGroup][AdUnit] += (float)(State.cumInf_age_adunit[AgeGroup][AdUnit]);
 		}
 }
 
@@ -4667,11 +4667,11 @@ void RecordQuarNotInfected(int n, unsigned short int ts)
 				if (Hosts[Person].inf > 0) QuarNotSymptomatic++;
 			}
 
-	TimeSeries[n].prevQuarNotInfected		= (double) QuarNotInfected;
-	TimeSeries[n].prevQuarNotSymptomatic	= (double) QuarNotSymptomatic;
+	TimeSeries[n].prevQuarNotInfected		= (float) QuarNotInfected;
+	TimeSeries[n].prevQuarNotSymptomatic	= (float) QuarNotSymptomatic;
 }
 
-void RecordSample(double t, int n, std::string const& output_file_base)
+void RecordSample(float t, int n, std::string const& output_file_base)
 {
 	int j, k, S, L, I, R, D, N, cumC, cumTC, cumI, cumR, cumD, cumDC, cumFC, cumTG, cumSI, nTG;
 	int cumCT; //added cumulative number of contact traced: ggilani 15/06/17
@@ -4763,29 +4763,29 @@ void RecordSample(double t, int n, std::string const& output_file_base)
 	for (j = 0; j < P.NumThreads; j++)
 		StateT[j].maxRad2 = State.maxRad2;
 	TimeSeries[n].t = t;
-	TimeSeries[n].S = (double)S;
-	TimeSeries[n].L = (double)L;
-	TimeSeries[n].I = (double)I;
-	TimeSeries[n].R = (double)R;
-	TimeSeries[n].D = (double)D;
-	TimeSeries[n].incI = (double)(cumI - State.cumI);
-	TimeSeries[n].incC = (double)(cumC - State.cumC);
-	TimeSeries[n].incFC = (double)(cumFC - State.cumFC);
-	TimeSeries[n].incCT = (double)(cumCT - State.cumCT); // added contact tracing
-	TimeSeries[n].incCC = (double)(cumCC - State.cumCC); // added cases who are contacts
-	TimeSeries[n].incDCT = (double)(cumDCT - State.cumDCT); //added cases who are digitally contact traced
-	TimeSeries[n].incDC = (double)(cumDC - State.cumDC); //added incidence of detected cases
-	TimeSeries[n].incTC = (double)(cumTC - State.cumTC);
-	TimeSeries[n].incR = (double)(cumR - State.cumR);
-	TimeSeries[n].incD = (double)(cumD - State.cumD);
-	TimeSeries[n].incHQ = (double)(cumHQ - State.cumHQ);
-	TimeSeries[n].incAC = (double)(cumAC - State.cumAC);
-	TimeSeries[n].incAH = (double)(cumAH - State.cumAH);
-	TimeSeries[n].incAA = (double)(cumAA - State.cumAA);
-	TimeSeries[n].incACS = (double)(cumACS - State.cumACS);
-	TimeSeries[n].incAPC = (double)(cumAPC - State.cumAPC);
-	TimeSeries[n].incAPA = (double)(cumAPA - State.cumAPA);
-	TimeSeries[n].incAPCS = (double)(cumAPCS - State.cumAPCS);
+	TimeSeries[n].S = (float)S;
+	TimeSeries[n].L = (float)L;
+	TimeSeries[n].I = (float)I;
+	TimeSeries[n].R = (float)R;
+	TimeSeries[n].D = (float)D;
+	TimeSeries[n].incI = (float)(cumI - State.cumI);
+	TimeSeries[n].incC = (float)(cumC - State.cumC);
+	TimeSeries[n].incFC = (float)(cumFC - State.cumFC);
+	TimeSeries[n].incCT = (float)(cumCT - State.cumCT); // added contact tracing
+	TimeSeries[n].incCC = (float)(cumCC - State.cumCC); // added cases who are contacts
+	TimeSeries[n].incDCT = (float)(cumDCT - State.cumDCT); //added cases who are digitally contact traced
+	TimeSeries[n].incDC = (float)(cumDC - State.cumDC); //added incidence of detected cases
+	TimeSeries[n].incTC = (float)(cumTC - State.cumTC);
+	TimeSeries[n].incR = (float)(cumR - State.cumR);
+	TimeSeries[n].incD = (float)(cumD - State.cumD);
+	TimeSeries[n].incHQ = (float)(cumHQ - State.cumHQ);
+	TimeSeries[n].incAC = (float)(cumAC - State.cumAC);
+	TimeSeries[n].incAH = (float)(cumAH - State.cumAH);
+	TimeSeries[n].incAA = (float)(cumAA - State.cumAA);
+	TimeSeries[n].incACS = (float)(cumACS - State.cumACS);
+	TimeSeries[n].incAPC = (float)(cumAPC - State.cumAPC);
+	TimeSeries[n].incAPA = (float)(cumAPA - State.cumAPA);
+	TimeSeries[n].incAPCS = (float)(cumAPCS - State.cumAPCS);
 	TimeSeries[n].cumT = State.cumT;
 	TimeSeries[n].cumUT = State.cumUT;
 	TimeSeries[n].cumTP = State.cumTP;
@@ -4795,12 +4795,12 @@ void RecordSample(double t, int n, std::string const& output_file_base)
 	TimeSeries[n].meanTG = TimeSeries[n].meanSI = 0;
 	if (nTG > 0) // record mean generation time and serial interval in timestep
 	{
-		TimeSeries[n].meanTG = P.TimeStep * ((double)cumTG) / ((double)nTG);
-		TimeSeries[n].meanSI = P.TimeStep * ((double)cumSI) / ((double)nTG);
+		TimeSeries[n].meanTG = P.TimeStep * ((float)cumTG) / ((float)nTG);
+		TimeSeries[n].meanSI = P.TimeStep * ((float)cumSI) / ((float)nTG);
 	}
-	//fprintf(stderr, "\ncumD=%i last_cumD=%i incD=%lg\n ", cumD, State.cumD, TimeSeries[n].incD);
+	//fprintf(stderr, "\ncumD=%i last_cumD=%i incD=%g\n ", cumD, State.cumD, TimeSeries[n].incD);
 	//incidence per country
-	for (int i = 0; i < MAX_COUNTRIES; i++) TimeSeries[n].incC_country[i] = (double)(cumC_country[i] - State.cumC_country[i]);
+	for (int i = 0; i < MAX_COUNTRIES; i++) TimeSeries[n].incC_country[i] = (float)(cumC_country[i] - State.cumC_country[i]);
 	if (P.DoICUTriggers)
 	{
 		trigDetectedCases = cumCritical;
@@ -4848,14 +4848,14 @@ void RecordSample(double t, int n, std::string const& output_file_base)
 	{
 
 		//// Record incidence. (Must be done with old State totals)
-		TimeSeries[n].incMild = (double)(cumMild - State.cumMild);
-		TimeSeries[n].incILI = (double)(cumILI - State.cumILI);
-		TimeSeries[n].incSARI = (double)(cumSARI - State.cumSARI);
-		TimeSeries[n].incCritical = (double)(cumCritical - State.cumCritical);
-		TimeSeries[n].incCritRecov = (double)(cumCritRecov - State.cumCritRecov);
-		TimeSeries[n].incDeath_ILI = (double)(cumDeath_ILI - State.cumDeath_ILI);
-		TimeSeries[n].incDeath_SARI = (double)(cumDeath_SARI - State.cumDeath_SARI);
-		TimeSeries[n].incDeath_Critical = (double)(cumDeath_Critical - State.cumDeath_Critical);
+		TimeSeries[n].incMild = (float)(cumMild - State.cumMild);
+		TimeSeries[n].incILI = (float)(cumILI - State.cumILI);
+		TimeSeries[n].incSARI = (float)(cumSARI - State.cumSARI);
+		TimeSeries[n].incCritical = (float)(cumCritical - State.cumCritical);
+		TimeSeries[n].incCritRecov = (float)(cumCritRecov - State.cumCritRecov);
+		TimeSeries[n].incDeath_ILI = (float)(cumDeath_ILI - State.cumDeath_ILI);
+		TimeSeries[n].incDeath_SARI = (float)(cumDeath_SARI - State.cumDeath_SARI);
+		TimeSeries[n].incDeath_Critical = (float)(cumDeath_Critical - State.cumDeath_Critical);
 
 		/////// update state with totals
 		State.Mild = Mild;
@@ -4891,14 +4891,14 @@ void RecordSample(double t, int n, std::string const& output_file_base)
 		{
 			//// Record incidence. Need new total minus old total (same as minus old total plus new total).
 			//// First subtract old total while unchanged.
-			TimeSeries[n].incMild_age[i] = (double)(-State.cumMild_age[i]);
-			TimeSeries[n].incILI_age[i] = (double)(-State.cumILI_age[i]);
-			TimeSeries[n].incSARI_age[i] = (double)(-State.cumSARI_age[i]);
-			TimeSeries[n].incCritical_age[i] = (double)(-State.cumCritical_age[i]);
-			TimeSeries[n].incCritRecov_age[i] = (double)(-State.cumCritRecov_age[i]);
-			TimeSeries[n].incDeath_ILI_age[i] = (double)(-State.cumDeath_ILI_age[i]);
-			TimeSeries[n].incDeath_SARI_age[i] = (double)(-State.cumDeath_SARI_age[i]);
-			TimeSeries[n].incDeath_Critical_age[i] = (double)(-State.cumDeath_Critical_age[i]);
+			TimeSeries[n].incMild_age[i] = (float)(-State.cumMild_age[i]);
+			TimeSeries[n].incILI_age[i] = (float)(-State.cumILI_age[i]);
+			TimeSeries[n].incSARI_age[i] = (float)(-State.cumSARI_age[i]);
+			TimeSeries[n].incCritical_age[i] = (float)(-State.cumCritical_age[i]);
+			TimeSeries[n].incCritRecov_age[i] = (float)(-State.cumCritRecov_age[i]);
+			TimeSeries[n].incDeath_ILI_age[i] = (float)(-State.cumDeath_ILI_age[i]);
+			TimeSeries[n].incDeath_SARI_age[i] = (float)(-State.cumDeath_SARI_age[i]);
+			TimeSeries[n].incDeath_Critical_age[i] = (float)(-State.cumDeath_Critical_age[i]);
 
 			State.Mild_age[i] = 0;
 			State.ILI_age[i] = 0;
@@ -4933,14 +4933,14 @@ void RecordSample(double t, int n, std::string const& output_file_base)
 			}
 
 			//// Record incidence. Need new total minus old total. Add new total
-			TimeSeries[n].incMild_age[i] += (double)(State.cumMild_age[i]);
-			TimeSeries[n].incILI_age[i] += (double)(State.cumILI_age[i]);
-			TimeSeries[n].incSARI_age[i] += (double)(State.cumSARI_age[i]);
-			TimeSeries[n].incCritical_age[i] += (double)(State.cumCritical_age[i]);
-			TimeSeries[n].incCritRecov_age[i] += (double)(State.cumCritRecov_age[i]);
-			TimeSeries[n].incDeath_ILI_age[i] += (double)(State.cumDeath_ILI_age[i]);
-			TimeSeries[n].incDeath_SARI_age[i] += (double)(State.cumDeath_SARI_age[i]);
-			TimeSeries[n].incDeath_Critical_age[i] += (double)(State.cumDeath_Critical_age[i]);
+			TimeSeries[n].incMild_age[i] += (float)(State.cumMild_age[i]);
+			TimeSeries[n].incILI_age[i] += (float)(State.cumILI_age[i]);
+			TimeSeries[n].incSARI_age[i] += (float)(State.cumSARI_age[i]);
+			TimeSeries[n].incCritical_age[i] += (float)(State.cumCritical_age[i]);
+			TimeSeries[n].incCritRecov_age[i] += (float)(State.cumCritRecov_age[i]);
+			TimeSeries[n].incDeath_ILI_age[i] += (float)(State.cumDeath_ILI_age[i]);
+			TimeSeries[n].incDeath_SARI_age[i] += (float)(State.cumDeath_SARI_age[i]);
+			TimeSeries[n].incDeath_Critical_age[i] += (float)(State.cumDeath_Critical_age[i]);
 
 			//// Record new totals for time series. (Must be done with old State totals)
 			TimeSeries[n].Mild_age[i] = State.Mild_age[i];
@@ -4962,15 +4962,15 @@ void RecordSample(double t, int n, std::string const& output_file_base)
 			{
 				//// Record incidence. Need new total minus old total (same as minus old total plus new total).
 				//// First subtract old total while unchanged.
-				TimeSeries[n].incMild_adunit[i] = (double)(-State.cumMild_adunit[i]);
-				TimeSeries[n].incILI_adunit[i] = (double)(-State.cumILI_adunit[i]);
-				TimeSeries[n].incSARI_adunit[i] = (double)(-State.cumSARI_adunit[i]);
-				TimeSeries[n].incCritical_adunit[i] = (double)(-State.cumCritical_adunit[i]);
-				TimeSeries[n].incCritRecov_adunit[i] = (double)(-State.cumCritRecov_adunit[i]);
-				TimeSeries[n].incD_adunit[i] = (double)(-State.cumD_adunit[i]);
-				TimeSeries[n].incDeath_ILI_adunit[i] = (double)(-State.cumDeath_ILI_adunit[i]);
-				TimeSeries[n].incDeath_SARI_adunit[i] = (double)(-State.cumDeath_SARI_adunit[i]);
-				TimeSeries[n].incDeath_Critical_adunit[i] = (double)(-State.cumDeath_Critical_adunit[i]);
+				TimeSeries[n].incMild_adunit[i] = (float)(-State.cumMild_adunit[i]);
+				TimeSeries[n].incILI_adunit[i] = (float)(-State.cumILI_adunit[i]);
+				TimeSeries[n].incSARI_adunit[i] = (float)(-State.cumSARI_adunit[i]);
+				TimeSeries[n].incCritical_adunit[i] = (float)(-State.cumCritical_adunit[i]);
+				TimeSeries[n].incCritRecov_adunit[i] = (float)(-State.cumCritRecov_adunit[i]);
+				TimeSeries[n].incD_adunit[i] = (float)(-State.cumD_adunit[i]);
+				TimeSeries[n].incDeath_ILI_adunit[i] = (float)(-State.cumDeath_ILI_adunit[i]);
+				TimeSeries[n].incDeath_SARI_adunit[i] = (float)(-State.cumDeath_SARI_adunit[i]);
+				TimeSeries[n].incDeath_Critical_adunit[i] = (float)(-State.cumDeath_Critical_adunit[i]);
 
 				//// reset State (not StateT) to zero. Don't need to do this with non-admin unit as local variables Mild, cumSARI etc. initialized to zero at beginning of function. Check with Gemma
 				State.Mild_adunit[i] = 0;
@@ -5008,15 +5008,15 @@ void RecordSample(double t, int n, std::string const& output_file_base)
 				}
 
 				//// Record incidence. Need new total minus old total. Add new total
-				TimeSeries[n].incMild_adunit[i] += (double)(State.cumMild_adunit[i]);
-				TimeSeries[n].incILI_adunit[i] += (double)(State.cumILI_adunit[i]);
-				TimeSeries[n].incSARI_adunit[i] += (double)(State.cumSARI_adunit[i]);
-				TimeSeries[n].incCritical_adunit[i] += (double)(State.cumCritical_adunit[i]);
-				TimeSeries[n].incCritRecov_adunit[i] += (double)(State.cumCritRecov_adunit[i]);
-				TimeSeries[n].incD_adunit[i] += (double)(State.cumD_adunit[i]);
-				TimeSeries[n].incDeath_ILI_adunit[i] += (double)(State.cumDeath_ILI_adunit[i]);
-				TimeSeries[n].incDeath_SARI_adunit[i] += (double)(State.cumDeath_SARI_adunit[i]);
-				TimeSeries[n].incDeath_Critical_adunit[i] += (double)(State.cumDeath_Critical_adunit[i]);
+				TimeSeries[n].incMild_adunit[i] += (float)(State.cumMild_adunit[i]);
+				TimeSeries[n].incILI_adunit[i] += (float)(State.cumILI_adunit[i]);
+				TimeSeries[n].incSARI_adunit[i] += (float)(State.cumSARI_adunit[i]);
+				TimeSeries[n].incCritical_adunit[i] += (float)(State.cumCritical_adunit[i]);
+				TimeSeries[n].incCritRecov_adunit[i] += (float)(State.cumCritRecov_adunit[i]);
+				TimeSeries[n].incD_adunit[i] += (float)(State.cumD_adunit[i]);
+				TimeSeries[n].incDeath_ILI_adunit[i] += (float)(State.cumDeath_ILI_adunit[i]);
+				TimeSeries[n].incDeath_SARI_adunit[i] += (float)(State.cumDeath_SARI_adunit[i]);
+				TimeSeries[n].incDeath_Critical_adunit[i] += (float)(State.cumDeath_Critical_adunit[i]);
 
 				//// Record new totals for time series. (Must be done with old State totals)
 				TimeSeries[n].Mild_adunit[i] = State.Mild_adunit[i];
@@ -5040,7 +5040,7 @@ void RecordSample(double t, int n, std::string const& output_file_base)
 	for (int i = 0; i < MAX_COUNTRIES; i++) State.cumC_country[i] = cumC_country[i];
 	//update overall state variable for cumulative cases per adunit
 
-	TimeSeries[n].rmsRad = (State.cumI > 0) ? sqrt(State.sumRad2 / ((double)State.cumI)) : 0;
+	TimeSeries[n].rmsRad = (State.cumI > 0) ? sqrt(State.sumRad2 / ((float)State.cumI)) : 0;
 	TimeSeries[n].maxRad = sqrt(State.maxRad2);
 	TimeSeries[n].extinct = ((((P.SmallEpidemicCases >= 0) && (State.R <= P.SmallEpidemicCases)) || (P.SmallEpidemicCases < 0)) && (State.I + State.L == 0)) ? 1 : 0;
 	for (int i = 0; i < NUM_AGE_GROUPS; i++)
@@ -5048,9 +5048,9 @@ void RecordSample(double t, int n, std::string const& output_file_base)
 		TimeSeries[n].incCa[i] = TimeSeries[n].incIa[i] = TimeSeries[n].incDa[i] = 0;
 		for (j = 0; j < P.NumThreads; j++)
 		{
-			TimeSeries[n].incCa[i] += (double)StateT[j].cumCa[i];
-			TimeSeries[n].incIa[i] += (double)StateT[j].cumIa[i];
-			TimeSeries[n].incDa[i] += (double)StateT[j].cumDa[i];
+			TimeSeries[n].incCa[i] += (float)StateT[j].cumCa[i];
+			TimeSeries[n].incIa[i] += (float)StateT[j].cumIa[i];
+			TimeSeries[n].incDa[i] += (float)StateT[j].cumDa[i];
 		}
 	}
 
@@ -5059,9 +5059,9 @@ void RecordSample(double t, int n, std::string const& output_file_base)
 		TimeSeries[n].incC_keyworker[i] = TimeSeries[n].incI_keyworker[i] = TimeSeries[n].cumT_keyworker[i] = 0;
 		for (j = 0; j < P.NumThreads; j++)
 		{
-			TimeSeries[n].incC_keyworker[i] += (double)StateT[j].cumC_keyworker[i];
-			TimeSeries[n].incI_keyworker[i] += (double)StateT[j].cumI_keyworker[i];
-			TimeSeries[n].cumT_keyworker[i] += (double)StateT[j].cumT_keyworker[i];
+			TimeSeries[n].incC_keyworker[i] += (float)StateT[j].cumC_keyworker[i];
+			TimeSeries[n].incI_keyworker[i] += (float)StateT[j].cumI_keyworker[i];
+			TimeSeries[n].cumT_keyworker[i] += (float)StateT[j].cumT_keyworker[i];
 			StateT[j].cumC_keyworker[i] = StateT[j].cumI_keyworker[i] = 0;
 		}
 	}
@@ -5071,7 +5071,7 @@ void RecordSample(double t, int n, std::string const& output_file_base)
 		TimeSeries[n].incItype[i] = 0;
 		for (j = 0; j < P.NumThreads; j++)
 		{
-			TimeSeries[n].incItype[i] += (double)StateT[j].cumItype[i];
+			TimeSeries[n].incItype[i] += (float)StateT[j].cumItype[i];
 			StateT[j].cumItype[i] = 0;
 		}
 	}
@@ -5081,14 +5081,14 @@ void RecordSample(double t, int n, std::string const& output_file_base)
 			TimeSeries[n].incI_adunit[i] = TimeSeries[n].incC_adunit[i] = TimeSeries[n].cumT_adunit[i] = TimeSeries[n].incH_adunit[i] = TimeSeries[n].incDC_adunit[i] = TimeSeries[n].incCT_adunit[i] = TimeSeries[n].incDCT_adunit[i] = 0; //added detected cases: ggilani 03/02/15
 			for (j = 0; j < P.NumThreads; j++)
 			{
-				TimeSeries[n].incI_adunit[i] += (double)StateT[j].cumI_adunit[i];
-				TimeSeries[n].incC_adunit[i] += (double)StateT[j].cumC_adunit[i];
-				TimeSeries[n].incDC_adunit[i] += (double)StateT[j].cumDC_adunit[i]; //added detected cases: ggilani 03/02/15
-				TimeSeries[n].incH_adunit[i] += (double)StateT[j].cumH_adunit[i]; //added hospitalisation
-				TimeSeries[n].incCT_adunit[i] += (double)StateT[j].cumCT_adunit[i]; //added contact tracing: ggilani 15/06/17
-				TimeSeries[n].incCC_adunit[i] += (double)StateT[j].cumCC_adunit[i]; //added cases who are contacts: ggilani 28/05/2019
-				TimeSeries[n].incDCT_adunit[i] += (double)StateT[j].cumDCT_adunit[i]; //added cases who are digitally contact traced: ggilani 11/03/20
-				TimeSeries[n].cumT_adunit[i] += (double)StateT[j].cumT_adunit[i];
+				TimeSeries[n].incI_adunit[i] += (float)StateT[j].cumI_adunit[i];
+				TimeSeries[n].incC_adunit[i] += (float)StateT[j].cumC_adunit[i];
+				TimeSeries[n].incDC_adunit[i] += (float)StateT[j].cumDC_adunit[i]; //added detected cases: ggilani 03/02/15
+				TimeSeries[n].incH_adunit[i] += (float)StateT[j].cumH_adunit[i]; //added hospitalisation
+				TimeSeries[n].incCT_adunit[i] += (float)StateT[j].cumCT_adunit[i]; //added contact tracing: ggilani 15/06/17
+				TimeSeries[n].incCC_adunit[i] += (float)StateT[j].cumCC_adunit[i]; //added cases who are contacts: ggilani 28/05/2019
+				TimeSeries[n].incDCT_adunit[i] += (float)StateT[j].cumDCT_adunit[i]; //added cases who are digitally contact traced: ggilani 11/03/20
+				TimeSeries[n].cumT_adunit[i] += (float)StateT[j].cumT_adunit[i];
 				State.cumC_adunit[i] += StateT[j].cumC_adunit[i];
 				State.cumDC_adunit[i] += StateT[j].cumDC_adunit[i];
 				StateT[j].cumI_adunit[i] = StateT[j].cumC_adunit[i] = StateT[j].cumH_adunit[i] = StateT[j].cumDC_adunit[i] = StateT[j].cumCT_adunit[i] = StateT[j].cumCC_adunit[i] = StateT[j].cumDCT_adunit[i] = 0; //added hospitalisation, detected cases, contact tracing: ggilani 03/02/15, 15/06/17
@@ -5106,7 +5106,7 @@ void RecordSample(double t, int n, std::string const& output_file_base)
 		}
 	if (P.DoDigitalContactTracing)
 		for (int i = 0; i < P.NumAdunits; i++)
-			TimeSeries[n].DCT_adunit[i] = (double)AdUnits[i].ndct; //added total numbers of contacts currently isolated due to digital contact tracing: ggilani 11/03/20
+			TimeSeries[n].DCT_adunit[i] = (float)AdUnits[i].ndct; //added total numbers of contacts currently isolated due to digital contact tracing: ggilani 11/03/20
 	if (P.DoPlaces)
 		for (int i = 0; i < NUM_PLACE_TYPES; i++)
 		{
@@ -5114,10 +5114,10 @@ void RecordSample(double t, int n, std::string const& output_file_base)
 			for (j = 0; j < P.Nplace[i]; j++)
 				if (PLACE_CLOSED(i, j)) numPC++;
 			State.NumPlacesClosed[i] = numPC;
-			TimeSeries[n].PropPlacesClosed[i] = ((double)numPC) / ((double)P.Nplace[i]);
+			TimeSeries[n].PropPlacesClosed[i] = ((float)numPC) / ((float)P.Nplace[i]);
 		}
 	for (int i = k = 0; i < P.NMC; i++) if (Mcells[i].socdist == 2) k++;
-	TimeSeries[n].PropSocDist = ((double)k) / ((double)P.NMC);
+	TimeSeries[n].PropSocDist = ((float)k) / ((float)P.NMC);
 
 	//update contact number distribution in State
 	for (int i = 0; i < (MAX_CONTACTS + 1); i++)
@@ -5136,7 +5136,7 @@ void RecordSample(double t, int n, std::string const& output_file_base)
 	}
 }
 
-void CalibrationThresholdCheck(double t,int n)
+void CalibrationThresholdCheck(float t,int n)
 {
 	int k;
 	int trigAlert, trigAlertCases;
@@ -5159,7 +5159,7 @@ void CalibrationThresholdCheck(double t,int n)
 		trigAlert = trigAlertCases;
 	}
 
-	double RatioPredictedObserved, DesiredAccuracy; // calibration variables.
+	float RatioPredictedObserved, DesiredAccuracy; // calibration variables.
 
 	if (((P.DoNoCalibration) && (t >= P.Epidemic_StartDate_CalTime)) ||
 		((!P.DoNoCalibration) && (((!P.DoAlertTriggerAfterInterv) && (trigAlert >= P.CaseOrDeathThresholdBeforeAlert)) ||
@@ -5174,7 +5174,7 @@ void CalibrationThresholdCheck(double t,int n)
 				if (P.DateTriggerReached_CalTime >= 0)
 				{
 					P.HolidaysStartDay_SimTime = P.DateTriggerReached_SimTime - P.Interventions_StartDate_CalTime; /// initialize holiday offset to time difference between DateTriggerReached_SimTime and day of year interventions start.
-//					fprintf(stderr, "@@## trigAlertCases=%i P.HolidaysStartDay_SimTime=%lg \n",trigAlertCases, P.HolidaysStartDay_SimTime);
+//					fprintf(stderr, "@@## trigAlertCases=%i P.HolidaysStartDay_SimTime=%g \n",trigAlertCases, P.HolidaysStartDay_SimTime);
 				}
 			}
 			if ((P.DateTriggerReached_CalTime >= 0) && (!P.DoAlertTriggerAfterInterv) && (P.InitialInfectionCalTime <= 0))
@@ -5186,10 +5186,10 @@ void CalibrationThresholdCheck(double t,int n)
 			{
 				if ((trigAlert > 0) && (P.ModelCalibIteration < 20))
 				{
-					RatioPredictedObserved = ((double)trigAlert)/((double)P.AlertTriggerAfterIntervThreshold);
-					DesiredAccuracy = 1.1 / sqrt((double)P.AlertTriggerAfterIntervThreshold);
+					RatioPredictedObserved = ((float)trigAlert)/((float)P.AlertTriggerAfterIntervThreshold);
+					DesiredAccuracy = 1.1 / sqrt((float)P.AlertTriggerAfterIntervThreshold);
 					if (DesiredAccuracy < 0.05) DesiredAccuracy = 0.05;
-					fprintf(stderr, "\n** %i %lf %lf | %lg / %lg \t", P.ModelCalibIteration, t, P.DateTriggerReached_SimTime + P.DateTriggerReached_CalTime - P.Interventions_StartDate_CalTime, P.HolidaysStartDay_SimTime, RatioPredictedObserved);
+					fprintf(stderr, "\n** %i %f %f | %g / %g \t", P.ModelCalibIteration, t, P.DateTriggerReached_SimTime + P.DateTriggerReached_CalTime - P.Interventions_StartDate_CalTime, P.HolidaysStartDay_SimTime, RatioPredictedObserved);
 					fprintf(stderr, "| %i %i %i %i -> ", trigAlert, trigAlertCases, P.AlertTriggerAfterIntervThreshold, P.CaseOrDeathThresholdBeforeAlert);
 
 					if (P.InitialInfectionCalTime > 0)
@@ -5213,7 +5213,7 @@ void CalibrationThresholdCheck(double t,int n)
 							P.StopCalibration = 1;
 						else if (P.ModelCalibIteration == 0)
 						{
-							k = (int)(((double)P.CaseOrDeathThresholdBeforeAlert) / RatioPredictedObserved);
+							k = (int)(((float)P.CaseOrDeathThresholdBeforeAlert) / RatioPredictedObserved);
 							if (k > 0) P.CaseOrDeathThresholdBeforeAlert = k;
 						}
 						else if ((P.ModelCalibIteration >= 2) && ((P.ModelCalibIteration) % 3 < 2))
@@ -5235,7 +5235,7 @@ void CalibrationThresholdCheck(double t,int n)
 						}
 					}
 					P.ModelCalibIteration++;
-					fprintf(stderr, "%i : %lg\n", P.CaseOrDeathThresholdBeforeAlert, P.SeedingScaling);
+					fprintf(stderr, "%i : %g\n", P.CaseOrDeathThresholdBeforeAlert, P.SeedingScaling);
 
 					if(P.StopCalibration)
 						fprintf(stderr, "Calibration ended.\n");
@@ -5251,7 +5251,7 @@ void CalibrationThresholdCheck(double t,int n)
 		if (P.VaryEfficaciesOverTime)
 			UpdateEfficaciesAndComplianceProportions(t - P.Epidemic_StartDate_CalTime);
 
-// changed to a define for speed (though always likely inlined anyway) and to avoid clang compiler warnings re double alignment
+// changed to a define for speed (though always likely inlined anyway) and to avoid clang compiler warnings re float alignment
 #define DO_OR_DONT_AMEND_START_TIME(X,Y) if(X>=1e10) X=Y;
 
 		//// Set Case isolation start time (by admin unit)
@@ -5306,7 +5306,7 @@ void CalibrationThresholdCheck(double t,int n)
 		}
 		DO_OR_DONT_AMEND_START_TIME(P.AirportCloseTimeStart, t + P.AirportCloseTimeStartBase);
 	}
-	if ((P.PlaceCloseIndepThresh > 0) && (((double)State.cumDC) >= P.PlaceCloseIndepThresh))
+	if ((P.PlaceCloseIndepThresh > 0) && (((float)State.cumDC) >= P.PlaceCloseIndepThresh))
 		DO_OR_DONT_AMEND_START_TIME(P.PlaceCloseTimeStart, t + P.PlaceCloseTimeStartBase);
 
 	if (t > P.SocDistTimeStart + P.SocDistChangeDelay)
@@ -5335,7 +5335,7 @@ void CalibrationThresholdCheck(double t,int n)
 			(t >= P.PlaceCloseTimeStartPrevious + P.PlaceCloseDuration) &&	//// if now after previous place closure period has finished AND
 			(t >= P.PlaceCloseTimeStartPrevious + P.PlaceCloseTimeStartBase2 - P.PlaceCloseTimeStartBase))	//// if now after previous start time + plus difference between 1st and 2nd base start times
 		{
-			fprintf(stderr, "\nSecond place closure period (t=%lg)\n", t);
+			fprintf(stderr, "\nSecond place closure period (t=%g)\n", t);
 			P.PlaceCloseTimeStartPrevious = P.PlaceCloseTimeStart2 = P.PlaceCloseTimeStart = t;
 			P.PlaceCloseDuration = P.PlaceCloseDuration2;
 			P.PlaceCloseIncTrig = P.PlaceCloseIncTrig2;
@@ -5349,17 +5349,17 @@ void CalcLikelihood(int run, std::string const& DataFile, std::string const& Out
 	FILE* dat;
 
 	static int DataAlreadyRead = 0, ncols,nrows, *ColTypes;
-	static double **Data,NegBinK,sumL;
+	static float **Data,NegBinK,sumL;
 
 	if (!DataAlreadyRead)
 	{
 		char FieldName[1024];
 		if (!(dat = fopen(DataFile.c_str(), "r"))) ERR_CRITICAL("Unable to open data file\n");
-		fscanf(dat, "%i %i %lg", &nrows, &ncols, &NegBinK);
+		fscanf(dat, "%i %i %g", &nrows, &ncols, &NegBinK);
 		if (!(ColTypes = (int*)calloc(ncols, sizeof(int)))) ERR_CRITICAL("Unable to allocate data file storage\n");
-		if (!(Data = (double**)calloc(nrows, sizeof(double *)))) ERR_CRITICAL("Unable to allocate data file storage\n");
+		if (!(Data = (float**)calloc(nrows, sizeof(float *)))) ERR_CRITICAL("Unable to allocate data file storage\n");
 		for(int i=0;i<nrows;i++)
-			if (!(Data[i] = (double*)calloc(ncols, sizeof(double)))) ERR_CRITICAL("Unable to allocate data file storage\n");
+			if (!(Data[i] = (float*)calloc(ncols, sizeof(float)))) ERR_CRITICAL("Unable to allocate data file storage\n");
 		for (int i = 0; i < ncols; i++)
 		{
 			ColTypes[i] = -100;
@@ -5392,27 +5392,27 @@ void CalcLikelihood(int run, std::string const& DataFile, std::string const& Out
 		}
 		for (int i = 0; i < nrows; i++)
 			for (int j = 0; j < ncols; j++)
-				fscanf(dat, "%lg", &(Data[i][j]));
+				fscanf(dat, "%g", &(Data[i][j]));
 		fclose(dat);
 		DataAlreadyRead = 1;
 	}
 
 	// calculate likelihood function
-	double c, LL=0.0;
-	double kp = (P.clP[99] > 0) ? P.clP[99] : NegBinK; //clP[99] reserved for fitting overdispersion
-	c = 1.0; // 1 / ((double)(P.NRactE + P.NRactNE));
+	float c, LL=0.0;
+	float kp = (P.clP[99] > 0) ? P.clP[99] : NegBinK; //clP[99] reserved for fitting overdispersion
+	c = 1.0; // 1 / ((float)(P.NRactE + P.NRactNE));
 	int offset= (P.Interventions_StartDate_CalTime > 0) ? ((int)(P.Interventions_StartDate_CalTime - P.DateTriggerReached_SimTime)) : 0;
 	for (int i = 1; i < ncols;i++)
 	{
 		if ((ColTypes[i] >= 0)&&(ColTypes[i] <= 2))
 		{
-			double ModelValueSum = 0.0;
+			float ModelValueSum = 0.0;
 			for (int j = 0; j < nrows; j++)
 			{
 				int day = (int)Data[j][0]; // day is day of year - directly indexes TimeSeries[]
 				if ((Data[j][i]>=-1) && (day < P.NumSamples)) // data is not NA (-ve) and within time range of model run
 				{
-					double ModelValue;
+					float ModelValue;
 					if (ColTypes[i]==0)
 						ModelValue=c*TimeSeries[day-offset].incD; // all deaths by date of death
 					else if (ColTypes[i] == 1)
@@ -5433,8 +5433,8 @@ void CalcLikelihood(int run, std::string const& DataFile, std::string const& Out
 						else
 						{
 							//neg bin LL (NegBinK=1 implies no over-dispersion. >1 implies more)
-							double knb = 1.0 + ModelValue / kp;
-							double pnb = kp / (1.0 + kp);
+							float knb = 1.0 + ModelValue / kp;
+							float pnb = kp / (1.0 + kp);
 							LL += lgamma(Data[j][i] + knb) - lgamma(Data[j][i] + 1) - lgamma(knb) + knb * log(1.0 - pnb) + Data[j][i] * log(pnb);
 						}
 					}
@@ -5448,16 +5448,16 @@ void CalcLikelihood(int run, std::string const& DataFile, std::string const& Out
 				int day = (int)Data[j][0]; // day is day of year - directly indexes TimeSeries[]
 				if ((Data[j][i] >= 0) && (day < P.NumSamples)) // data is not NA (-ve) and within time range of model run
 				{
-					double m = Data[j][i]; // numerator
-					double N = Data[j][i + 1]; // denominator
-					double ModelValue;
+					float m = Data[j][i]; // numerator
+					float N = Data[j][i + 1]; // denominator
+					float ModelValue;
 					for (int k = offset; k < day; k++) // loop over all days of infection up to day of sample
 					{
-						double prob_seroconvert = P.SeroConvMaxSens*(1.0-0.5*((exp(-((double)(day - k))*P.SeroConvP1) + 1.0)*exp(-((double)(day - k))*P.SeroConvP2))); // add P1 to P2 to prevent degeneracy
+						float prob_seroconvert = P.SeroConvMaxSens*(1.0-0.5*((exp(-((float)(day - k))*P.SeroConvP1) + 1.0)*exp(-((float)(day - k))*P.SeroConvP2))); // add P1 to P2 to prevent degeneracy
 						ModelValue += c * TimeSeries[k - offset].incI * prob_seroconvert;
 					}
 					ModelValue += c * TimeSeries[day-offset].S * (1.0 - P.SeroConvSpec);
-					ModelValue /= ((double)P.PopSize);
+					ModelValue /= ((float)P.PopSize);
 					LL += m * log((ModelValue + 1e-20)/(m/N+1e-20)) + (N - m) * log((1.0 - ModelValue + 1e-20)/(1.0-m/N+1e-20));  // subtract saturated likelihood
 				}
 			}
@@ -5469,27 +5469,27 @@ void CalcLikelihood(int run, std::string const& DataFile, std::string const& Out
 				int day = (int)Data[j][0]; // day is day of year - directly indexes TimeSeries[]
 				if ((Data[j][i] >= 0) && (day < P.NumSamples)) // data is not NA (-ve) and within time range of model run
 				{
-					double m = Data[j][i]; // numerator
-					double N = Data[j][i + 1]; // denominator
-					double ModelValue = P.InfPrevSurveyScale * c * TimeSeries[day-offset].I / ((double)P.PopSize);
+					float m = Data[j][i]; // numerator
+					float N = Data[j][i + 1]; // denominator
+					float ModelValue = P.InfPrevSurveyScale * c * TimeSeries[day-offset].I / ((float)P.PopSize);
 					LL += m * log(ModelValue + 1e-20) + (N - m) * log(1.0 - ModelValue);
 				}
 			}
 		}
 	}
-	fprintf(stderr, "Log-likelihood = %lg\n", LL);
+	fprintf(stderr, "Log-likelihood = %g\n", LL);
 	if (run == 0)
 		sumL = LL;
 	else
 	{
-		double maxLL = LL;
+		float maxLL = LL;
 		if (sumL > maxLL) maxLL = sumL;
 		sumL = maxLL + log(exp(sumL - maxLL) + exp(LL - maxLL));
 	}
 
 	if (run + 1 == P.NumRealisations)
 	{
-		LL = sumL - log((double)P.NumRealisations);
+		LL = sumL - log((float)P.NumRealisations);
 		std::string TmpFile = OutFileBase + ".ll.tmp";
 		std::string OutFile = OutFileBase + ".ll.txt";
 		if (!(dat = fopen(TmpFile.c_str(), "w"))) ERR_CRITICAL("Unable to open likelihood file\n");
@@ -5502,7 +5502,7 @@ void CalcLikelihood(int run, std::string const& DataFile, std::string const& Out
 void RecordInfTypes(void)
 {
 	int i, j, k, l, lc, lc2, b, c, n, nf, i2;
-	double* res, * res_av, * res_var, t, s;
+	float* res, * res_av, * res_var, t, s;
 
 	for (n = 0; n < P.NumSamples; n++)
 	{
@@ -5615,7 +5615,7 @@ void RecordInfTypes(void)
 			s += (TimeSeries[n].Rtype[i] /= TimeSeries[n].Rdenom);
 		TimeSeries[n].Rdenom = s;
 	}
-	nf = sizeof(Results) / sizeof(double);
+	nf = sizeof(Results) / sizeof(float);
 	if (!P.DoAdUnits) nf -= MAX_ADUNITS; // TODO: This still processes most of the AdUnit arrays; just not the last one
 
 	if (TimeSeries[P.NumSamples - 1].extinct)
@@ -5633,11 +5633,11 @@ void RecordInfTypes(void)
 	{
 		if ((n + lc >= 0) && (n + lc < P.NumSamples))
 		{
-			if (s < TimeSeries[n + lc].incC) { s = TimeSeries[n + lc].incC; t = P.SampleStep * ((double)(n + lc)); }
-			res = (double*)&TimeSeries[n + lc];
-			res_av = (double*)&TSMean[n];
-			res_var = (double*)&TSVar[n];
-			for (std::size_t i = ResultsDoubleOffsetStart /* skip over initial fields */; i < nf; i++)
+			if (s < TimeSeries[n + lc].incC) { s = TimeSeries[n + lc].incC; t = P.SampleStep * ((float)(n + lc)); }
+			res = (float*)&TimeSeries[n + lc];
+			res_av = (float*)&TSMean[n];
+			res_var = (float*)&TSVar[n];
+			for (std::size_t i = ResultsfloatOffsetStart /* skip over initial fields */; i < nf; i++)
 			{
 				res_av[i] += res[i];
 				res_var[i] += res[i] * res[i];
@@ -5654,7 +5654,7 @@ void RecordInfTypes(void)
 			if (TSMean[n].cumTmax < TimeSeries[n + lc].cumT) TSMean[n].cumTmax = TimeSeries[n + lc].cumT;
 			if (TSMean[n].cumVmax < TimeSeries[n + lc].cumV) TSMean[n].cumVmax = TimeSeries[n + lc].cumV;
 		}
-		TSMean[n].t += ((double) n )* P.SampleStep;
+		TSMean[n].t += ((float) n )* P.SampleStep;
 	}
 	PeakHeightSum += s;
 	PeakHeightSS += s * s;
@@ -5683,7 +5683,7 @@ void CalcOriginDestMatrix_adunit()
 		for (int i = tn; i < P.NCP; i += P.NumThreads)
 		{
 			//reset pop density matrix to zero
-			double pop_dens_from[MAX_ADUNITS] = {};
+			float pop_dens_from[MAX_ADUNITS] = {};
 
 			//find index of cell from which flow travels
 			ptrdiff_t cl_from = CellLookup[i] - Cells;
@@ -5699,7 +5699,7 @@ void CalcOriginDestMatrix_adunit()
 					if (Mcells[mcl_from].n > 0)
 					{
 						//get proportion of each population of cell that exists in each admin unit
-						pop_dens_from[Mcells[mcl_from].adunit] += (((double)Mcells[mcl_from].n) / ((double)Cells[cl_from].n));
+						pop_dens_from[Mcells[mcl_from].adunit] += (((float)Mcells[mcl_from].n) / ((float)Cells[cl_from].n));
 					}
 				}
 			}
@@ -5707,14 +5707,14 @@ void CalcOriginDestMatrix_adunit()
 			for (int j = i; j < P.NCP; j++)
 			{
 				//reset pop density matrix to zero
-				double pop_dens_to[MAX_ADUNITS] = {};
+				float pop_dens_to[MAX_ADUNITS] = {};
 
 				//find index of cell which flow travels to
 				ptrdiff_t cl_to = CellLookup[j] - Cells;
 				ptrdiff_t cl_to_mcl = (cl_to / P.nch) * P.NMCL * P.total_microcells_high_ + (cl_to % P.nch) * P.NMCL;
 				//calculate distance and kernel between the cells
 				//total_flow=Cells[cl_from].max_trans[j]*Cells[cl_from].n*Cells[cl_to].n;
-				double total_flow;
+				float total_flow;
 				if (j == 0)
 				{
 					total_flow = Cells[cl_from].cum_trans[j] * Cells[cl_from].n;
@@ -5734,7 +5734,7 @@ void CalcOriginDestMatrix_adunit()
 						if (Mcells[mcl_to].n > 0)
 						{
 							//get proportion of each population of cell that exists in each admin unit
-							pop_dens_to[Mcells[mcl_to].adunit] += (((double)Mcells[mcl_to].n) / ((double)Cells[cl_to].n));
+							pop_dens_to[Mcells[mcl_to].adunit] += (((float)Mcells[mcl_to].n) / ((float)Cells[cl_to].n));
 						}
 					}
 				}
@@ -5745,7 +5745,7 @@ void CalcOriginDestMatrix_adunit()
 					{
 						if (m != p)
 						{
-							double flow = total_flow * pop_dens_from[m] * pop_dens_to[p]; //updated to remove reference to cross-border flows: ggilani 26/03/20
+							float flow = total_flow * pop_dens_from[m] * pop_dens_to[p]; //updated to remove reference to cross-border flows: ggilani 26/03/20
 							StateT[tn].origin_dest[m][p] += flow;
 							StateT[tn].origin_dest[p][m] += flow;
 						}
@@ -5864,7 +5864,7 @@ int GetInputParameter3(FILE* dat, const char* SItemName, const char* ItemType, v
 	if (FindFlag)
 	{
 		FindFlag = 0;
-		if (!strcmp(ItemType, "%lf"))	n = 1;
+		if (!strcmp(ItemType, "%f"))	n = 1;
 		else if (!strcmp(ItemType, "%i"))	n = 2;
 		else if (!strcmp(ItemType, "%s"))	n = 3;
 		if (NumItem2 < 2)
@@ -5887,7 +5887,7 @@ int GetInputParameter3(FILE* dat, const char* SItemName, const char* ItemType, v
 					}
 					FindFlag++;
 					if (n == 1)
-						*((double*)ItemPtr) = P.clP[cln];
+						*((float*)ItemPtr) = P.clP[cln];
 					else if (n == 2)
 						*((int*)ItemPtr) = (int)P.clP[cln];
 					else if (n == 3)
@@ -5897,7 +5897,7 @@ int GetInputParameter3(FILE* dat, const char* SItemName, const char* ItemType, v
 				{
 					FindFlag++;
 					if (n == 1)
-						sscanf(match, "%lf", (double*)ItemPtr);
+						sscanf(match, "%f", (float*)ItemPtr);
 					else if (n == 2)
 						sscanf(match, "%i", (int*)ItemPtr);
 					else if (n == 3)
@@ -5919,7 +5919,7 @@ int GetInputParameter3(FILE* dat, const char* SItemName, const char* ItemType, v
 						FindFlag++;
 						if (n == 1)
 						{
-							double* ipt = (((double*)ItemPtr) + CurPos + Offset);
+							float* ipt = (((float*)ItemPtr) + CurPos + Offset);
 							*ipt = P.clP[cln];
 							if (P.clP_copies[cln] < MAX_CLP_COPIES)
 							{
@@ -5946,7 +5946,7 @@ int GetInputParameter3(FILE* dat, const char* SItemName, const char* ItemType, v
 					{
 						FindFlag++;
 						if (n == 1)
-							sscanf(match, "%lf", ((double*)ItemPtr) + CurPos + Offset);
+							sscanf(match, "%f", ((float*)ItemPtr) + CurPos + Offset);
 						else if (n == 2)
 							sscanf(match, "%i", ((int*)ItemPtr) + CurPos + Offset);
 						else if (n == 3)
@@ -5974,7 +5974,7 @@ int GetInputParameter3(FILE* dat, const char* SItemName, const char* ItemType, v
 							cln = (int)(match[1] - '0');
 						if (n == 1)
 						{
-							double* ipt = (((double**)ItemPtr)[j + Offset] + i + Offset);
+							float* ipt = (((float**)ItemPtr)[j + Offset] + i + Offset);
 							*ipt = P.clP[cln];
 							if (P.clP_copies[cln] < MAX_CLP_COPIES)
 							{
@@ -6001,7 +6001,7 @@ int GetInputParameter3(FILE* dat, const char* SItemName, const char* ItemType, v
 					{
 						FindFlag++;
 						if (n == 1)
-							sscanf(match, "%lf", ((double**)ItemPtr)[j + Offset] + i + Offset);
+							sscanf(match, "%f", ((float**)ItemPtr)[j + Offset] + i + Offset);
 						else
 							sscanf(match, "%i", ((int**)ItemPtr)[j + Offset] + i + Offset);
 					}
@@ -6021,9 +6021,9 @@ int GetInputParameter3(FILE* dat, const char* SItemName, const char* ItemType, v
 
 
 void GetInverseCdf(FILE* param_file_dat, FILE* preparam_file_dat, const char* icdf_name, InverseCdf* inverseCdf,
-	double start_value)
+	float start_value)
 {
-	if (!GetInputParameter2(param_file_dat, preparam_file_dat, icdf_name, "%lf", (void*)inverseCdf->get_values(), CDF_RES + 1, 1, 0))
+	if (!GetInputParameter2(param_file_dat, preparam_file_dat, icdf_name, "%f", (void*)inverseCdf->get_values(), CDF_RES + 1, 1, 0))
 	{
 		inverseCdf->set_neg_log(start_value);
 	}

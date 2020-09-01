@@ -16,7 +16,7 @@
 using namespace Geometry;
 
 //adding function to record an event: ggilani - 10/10/2014
-void RecordEvent(double, int, int, int, int); //added int as argument to InfectSweep to record run number: ggilani - 15/10/14
+void RecordEvent(float, int, int, int, int); //added int as argument to InfectSweep to record run number: ggilani - 15/10/14
 
 Severity ChooseFinalDiseaseSeverity(int, int);
 
@@ -29,7 +29,7 @@ static void InfectiousToDeath(int cellIndex);
 
 // severity state transition helpers
 
-static void ToInfected(int tn, short infectType, int personIndex, double radiusSquared);
+static void ToInfected(int tn, short infectType, int personIndex, float radiusSquared);
 static void FromMild(int tn, int microCellIndex, int personIndex);
 static void ToMild(int tn, int microCellIndex, int personIndex);
 static void FromCritRecov(int tn, int microCellIndex, int personIndex);
@@ -99,13 +99,13 @@ void DoImmune(int ai)
 		}
 	}
 }
-void DoInfect(int ai, double t, int tn, int run) // Change person from susceptible to latently infected.  added int as argument to DoInfect to record run number: ggilani - 15/10/14
+void DoInfect(int ai, float t, int tn, int run) // Change person from susceptible to latently infected.  added int as argument to DoInfect to record run number: ggilani - 15/10/14
 {
 	///// This updates a number of things concerning person ai (and their contacts/infectors/places etc.) at time t in thread tn for this run.
 	int i;
 	unsigned short int ts; //// time step
-	double radiusSquared, x, y; //// radius squared, x and y coords. 
-	double q; //// quantile of inverse CDF to choose latent period.
+	float radiusSquared, x, y; //// radius squared, x and y coords.
+	float q; //// quantile of inverse CDF to choose latent period.
 	Person* a;
 
 	a = Hosts + ai; //// pointer arithmetic. a = pointer to person. ai = int person index.
@@ -140,7 +140,7 @@ void DoInfect(int ai, double t, int tn, int run) // Change person from susceptib
 		if (P.DoLatent)
 		{
 			i = (int)floor((q = ranf_mt(tn) * CDF_RES));
-			q -= ((double)i);
+			q -= ((float)i);
 			a->latent_time = (unsigned short int) floor(0.5 + (t - P.LatentPeriod * log(q * P.latent_icdf[i + 1] + (1.0 - q) * P.latent_icdf[i])) * P.TimeStepsPerDay);
 		}
 		else
@@ -195,7 +195,7 @@ void DoInfect(int ai, double t, int tn, int run) // Change person from susceptib
 	}
 }
 
-void RecordEvent(double t, int ai, int run, int type, int tn) //added int as argument to RecordEvent to record run number: ggilani - 15/10/14
+void RecordEvent(float t, int ai, int run, int type, int tn) //added int as argument to RecordEvent to record run number: ggilani - 15/10/14
 {
 	/* Function: RecordEvent(t, ai)
 	 * Records an infection event in the event log
@@ -394,7 +394,7 @@ void DoRecover_FromSeverity(int ai, int tn)
 void DoIncub(int ai, unsigned short int ts, int tn, int run)
 {
 	Person* a;
-	double q;
+	float q;
 	int age;
 
 	age = HOST_AGE_GROUP(ai);
@@ -508,7 +508,7 @@ void DoIncub(int ai, unsigned short int ts, int tn, int run)
 	}
 }
 
-void DoDetectedCase(int ai, double t, unsigned short int ts, int tn)
+void DoDetectedCase(int ai, float t, unsigned short int ts, int tn)
 {
 	//// Function DoDetectedCase does many things associated with various interventions.
 	//// Enacts Household quarantine, case isolation, place closure.
@@ -773,7 +773,7 @@ void DoDetectedCase(int ai, double t, unsigned short int ts, int tn)
 
 }
 
-void DoCase(int ai, double t, unsigned short int ts, int tn) //// makes an infectious (but asymptomatic) person symptomatic. Called in IncubRecoverySweep (and DoInfect if P.DoOneGen)
+void DoCase(int ai, float t, unsigned short int ts, int tn) //// makes an infectious (but asymptomatic) person symptomatic. Called in IncubRecoverySweep (and DoInfect if P.DoOneGen)
 {
 	int j, k, f, j1, j2;
 	Person* a;
@@ -871,7 +871,7 @@ void DoCase(int ai, double t, unsigned short int ts, int tn) //// makes an infec
 	}
 }
 
-void DoFalseCase(int ai, double t, unsigned short int ts, int tn)
+void DoFalseCase(int ai, float t, unsigned short int ts, int tn)
 {
 	/* Arguably adult absenteeism to take care of sick kids could be included here, but then output absenteeism would not be 'excess' absenteeism */
 	if ((P.ControlPropCasesId == 1) || (ranf_mt(tn) < P.ControlPropCasesId))
@@ -1079,7 +1079,7 @@ void DoPlaceClose(int i, int j, unsigned short int ts, int tn, int DoAnyway)
 			fprintf(stderr,"** %i %i *\n",i,j);
 		else
 	*/
-	t_new = (unsigned short)(((double)ts) / P.TimeStepsPerDay);
+	t_new = (unsigned short)(((float)ts) / P.TimeStepsPerDay);
 	trig = 0;
 	t_start = ts + ((unsigned short int) (P.TimeStepsPerDay * P.PlaceCloseDelayMean));
 	if (P.DoInterventionDelaysByAdUnit)
@@ -1112,9 +1112,9 @@ void DoPlaceClose(int i, int j, unsigned short int ts, int tn, int DoAnyway)
 					trig = Places[i][j].Absent[t_new % P.MaxAbsentTime];
 					Places[i][j].AbsentLastUpdateTime = t_new;
 					if ((P.PlaceCloseByAdminUnit) && (P.PlaceCloseAdunitPlaceTypes[i] > 0)
-						&& (((double)trig) / ((double)Places[i][j].n) > P.PlaceCloseCasePropThresh))
+						&& (((float)trig) / ((float)Places[i][j].n) > P.PlaceCloseCasePropThresh))
 					{
-						//fprintf(stderr,"** %i %i %i %i %lg ## ",i,j,(int) Places[i][j].control_trig, (int) Places[i][j].n,P.PlaceCloseCasePropThresh);
+						//fprintf(stderr,"** %i %i %i %i %g ## ",i,j,(int) Places[i][j].control_trig, (int) Places[i][j].n,P.PlaceCloseCasePropThresh);
 						k = Mcells[Places[i][j].mcell].adunit;
 						if (AdUnits[k].place_close_trig < USHRT_MAX - 1) AdUnits[k].place_close_trig++;
 					}
@@ -1123,9 +1123,9 @@ void DoPlaceClose(int i, int j, unsigned short int ts, int tn, int DoAnyway)
 				{
 					trig = Places[i][j].control_trig;
 					if ((P.PlaceCloseByAdminUnit) && (P.PlaceCloseAdunitPlaceTypes[i] > 0)
-						&& (((double)Places[i][j].control_trig) / ((double)Places[i][j].n) > P.PlaceCloseCasePropThresh))
+						&& (((float)Places[i][j].control_trig) / ((float)Places[i][j].n) > P.PlaceCloseCasePropThresh))
 					{
-						//fprintf(stderr,"** %i %i %i %i %lg ## ",i,j,(int) Places[i][j].control_trig, (int) Places[i][j].n,P.PlaceCloseCasePropThresh);
+						//fprintf(stderr,"** %i %i %i %i %g ## ",i,j,(int) Places[i][j].control_trig, (int) Places[i][j].n,P.PlaceCloseCasePropThresh);
 						k = Mcells[Places[i][j].mcell].adunit;
 						if (AdUnits[k].place_close_trig < USHRT_MAX - 1) AdUnits[k].place_close_trig++;
 					}
@@ -1134,7 +1134,7 @@ void DoPlaceClose(int i, int j, unsigned short int ts, int tn, int DoAnyway)
 			if (Places[i][j].control_trig < USHRT_MAX - 1) //// control_trig initialized to zero so this check will pass at least once
 			{
 				if (P.PlaceCloseFracIncTrig > 0)
-					k = (((double)trig) / ((double)Places[i][j].n) > P.PlaceCloseFracIncTrig);
+					k = (((float)trig) / ((float)Places[i][j].n) > P.PlaceCloseFracIncTrig);
 				else
 					k = (((int)trig) >= P.PlaceCloseIncTrig);
 				if (((!P.PlaceCloseByAdminUnit) && (k)) || (DoAnyway))
@@ -1341,7 +1341,7 @@ void DoVaccNoDelay(int ai, unsigned short int ts)
 Severity ChooseFinalDiseaseSeverity(int AgeGroup, int tn)
 {
 	Severity DiseaseSeverity;
-	double x;
+	float x;
 
 	// assume normalised props
 
@@ -1439,7 +1439,7 @@ static void ToSeverity(int& quantity, int* age, int* adUnit, int microCellIndex,
 	ChangeSeverity(quantity, age, adUnit, microCellIndex, personIndex, action);
 }
 
-static void ToInfected(int tn, short infectType, int personIndex, double radiusSquared)
+static void ToInfected(int tn, short infectType, int personIndex, float radiusSquared)
 {
 	///// Change threaded state variables to reflect new infection status of person personIndex.
 	StateT[tn].cumI++;

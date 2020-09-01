@@ -6,12 +6,12 @@
 #include "Models/Microcell.h"
 #include "Constants.h"
 
-extern double sinx[DEGREES_PER_TURN + 1], cosx[DEGREES_PER_TURN + 1], asin2sqx[1001];
-double dist2UTM(double, double, double, double);
-double dist2(Person*, Person*);
-double dist2_cc(Cell*, Cell*);
-double dist2_cc_min(Cell*, Cell*);
-double dist2_mm(Microcell*, Microcell*);
-double dist2_raw(double, double, double, double);
+extern float sinx[DEGREES_PER_TURN + 1], cosx[DEGREES_PER_TURN + 1], asin2sqx[1001];
+float dist2UTM(float, float, float, float);
+float dist2(Person*, Person*);
+float dist2_cc(Cell*, Cell*);
+float dist2_cc_min(Cell*, Cell*);
+float dist2_mm(Microcell*, Microcell*);
+float dist2_raw(float, float, float, float);
 
 #endif // COVIDSIM_DIST_H_INCLUDED_

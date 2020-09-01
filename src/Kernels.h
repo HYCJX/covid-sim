@@ -17,46 +17,46 @@ namespace CovidSim
       int type_;
 
       /// Distribution parameter
-      double shape_;
+      float shape_;
 
       /// Representative distance
-      double scale_;
+      float scale_;
 
       /// Distribution parameter
-      double p3_;
+      float p3_;
 
       /// Distribution parameter
-      double p4_;
+      float p4_;
 
       /// \param r2 The distance squared
       /// \return Probability
-      double exponential(double r2) const;
+      float exponential(float r2) const;
 
       /// \param r2 The distance squared
       /// \return Probability
-      double power(double r2) const;
+      float power(float r2) const;
 
       /// \param r2 The distance squared
       /// \return Probability
-      double power_b(double r2) const;
+      float power_b(float r2) const;
 
       /// \param r2 The distance squared
       /// \return Probability
-      double power_us(double r2) const;
+      float power_us(float r2) const;
 
       /// \param r2 The distance squared
       /// \return Probability
-      double power_exp(double r2) const;
+      float power_exp(float r2) const;
 
       /// Gaussian distribution a.k.a. normal distribution and bell curve
       /// \param r2 The distance squared
       /// \return Probability
-      double gaussian(double r2) const;
+      float gaussian(float r2) const;
 
       /// Step function
       /// \param r2 The distance squared
       /// \return Probability
-      double step(double r2) const;
+      float step(float r2) const;
     };
 
     /// \brief To speed up calculation of kernel values we provide a couple of lookup
@@ -81,13 +81,13 @@ namespace CovidSim
     {
     private:
       /// Kernel lookup table
-      std::vector<double> lookup_;
+      std::vector<float> lookup_;
 
       /// Hi-res kernel lookup table for closer distances
-      std::vector<double> hi_res_;
+      std::vector<float> hi_res_;
 
       /// Longest distance / lookup_.size()
-      double delta_;
+      float delta_;
 
     public:
       /// Size of kernel lookup table
@@ -98,12 +98,12 @@ namespace CovidSim
 
       /// Resize the vectors and calculate delta_
       /// \param longest_distance The longest distance to lookup
-      void setup(double longest_distance);
+      void setup(float longest_distance);
 
       /// Set the values in the lookup table
       /// \param norm Value to divide the probability by
       /// \param kernel The kernel to use when calculating the lookup tables
-      void init(double norm, KernelStruct& kernel);
+      void init(float norm, KernelStruct& kernel);
 
       /// Set the values in the cell lookup table
       /// \param lookup The kernel lookup table
@@ -114,7 +114,7 @@ namespace CovidSim
       /// Perform a lookup
       /// \param r2 The distance squared
       /// \return Probability
-      double num(double r2) const;
+      float num(float r2) const;
     };
   }
 }

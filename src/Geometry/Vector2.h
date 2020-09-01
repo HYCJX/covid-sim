@@ -124,9 +124,9 @@ namespace Geometry {
 	typedef Vector2<float>  Vector2f;
 	typedef Vector2<int>    Vector2i;
 
-	Vector2d operator*(const Vector2d &left, const Vector2f &right);
-	Vector2d operator*(const Vector2f &left, const Vector2d &right);
+	Vector2f operator*(const Vector2f &left, const Vector2d &right);
+	Vector2f operator*(const Vector2d &left, const Vector2f &right);
 
-	Vector2d operator-(const Vector2d &left, const Vector2i &right);
-	Vector2d operator-(const Vector2i &left, const Vector2d &right);
+	Vector2f operator-(const Vector2f &left, const Vector2i &right);
+	Vector2f operator-(const Vector2i &left, const Vector2f &right);
 }

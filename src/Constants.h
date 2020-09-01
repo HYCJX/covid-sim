@@ -5,13 +5,13 @@
  * Math constant defined as the ratio of a circle's circumference to its diameter.
  *
  * TODO: since all calculations using this constant are being automatically
- * type-casted to double, should the precision be extended for more accuracy in
+ * type-casted to float, should the precision be extended for more accuracy in
  * the simulations?
  *
  * Eventually could be replaced with C++20's std::numbers::pi.
  * https://en.cppreference.com/w/cpp/header/numbers
  */
-constexpr double PI = 3.1415926535; // full double precision: 3.14159265358979323846
+constexpr float PI = 3.1415926535; // full float precision: 3.14159265358979323846
 
 /**
  * An arc minute of latitude along any line of longitude in meters.
@@ -47,7 +47,7 @@ constexpr int EARTH_CIRCUMFERENCE = NMI * ARCMINUTES_PER_DEGREE * DEGREES_PER_TU
 /**
  * The earth's diameter in meters.
  */
-constexpr double EARTH_DIAMETER = EARTH_CIRCUMFERENCE / PI;
+constexpr float EARTH_DIAMETER = EARTH_CIRCUMFERENCE / PI;
 
 /**
  * The Earth's radius in meters.
@@ -61,7 +61,7 @@ constexpr double EARTH_DIAMETER = EARTH_CIRCUMFERENCE / PI;
  *
  *     Earth's circumference (m) = NMI * ARCMINUTES_PER_DEGREE * DEGREES_PER_TURN
  */
-constexpr double EARTHRADIUS = EARTH_DIAMETER / 2;
+constexpr float EARTHRADIUS = EARTH_DIAMETER / 2;
 
 const int OUTPUT_DIST_SCALE = 1000;
 const int MAX_PLACE_SIZE = 20000;
@@ -93,7 +93,7 @@ const int MAX_DUR_IMPORT_PROFILE = 10245;
 
 const int MAX_AIRPORTS = 5000;
 const int NNA = 10;
-// Need to use define for MAX_DIST_AIRPORT_TO_HOTEL to avoid differences between GCC and clang in requirements to share const doubles in OpenMP default(none) pragmas
+// Need to use define for MAX_DIST_AIRPORT_TO_HOTEL to avoid differences between GCC and clang in requirements to share const floats in OpenMP default(none) pragmas
 #define MAX_DIST_AIRPORT_TO_HOTEL 200000.0
 const int MIN_HOTELS_PER_AIRPORT = 20;
 const int HOTELS_PER_1000PASSENGER = 10;
