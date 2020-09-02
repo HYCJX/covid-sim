@@ -20,7 +20,7 @@ int32_t ignpoi(double);
 int32_t ignbin_mt(int32_t, double, int);
 int32_t ignpoi_mt(double, int);
 double ranf(void);
-double ranf_mt(int);
+float ranf_mt(int);
 void setall(int32_t *, int32_t *);
 double sexpo_mt(int);
 double sexpo(void);

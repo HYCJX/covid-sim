@@ -25,7 +25,7 @@ double ranf(void)
 	return ranf_mt(OMP_GET_THREAD_NUM);
 }
 
-double ranf_mt(int tn)
+float ranf_mt(int tn)
 {
 	int32_t k, s1, s2, z;
 	int curntg;
@@ -43,7 +43,7 @@ double ranf_mt(int tn)
 	Xcg2[curntg] = s2;
 	z = s1 - s2;
 	if (z < 1) z += (Xm1 - 1);
-	return ((double)z) / Xm1;
+	return (float) (((double)z) / Xm1);
 }
 
 void setall(int32_t *pseed1, int32_t *pseed2)
@@ -513,7 +513,7 @@ TYPE OF ISEED SHOULD BE DICTATED BY THE UNIFORM GENERATOR
 	double psave = -1.0E37;
 	int32_t nsave = -214748365;
 	int32_t ignbin_mt, i, ix, ix1, k, m, mp, T1;
-	double al, alv, amaxp, c, f, f1, f2, ffm, fm, g, p, p1, p2, p3, p4, q, qn, r, u, v, w, w2, x, x1,
+	float al, alv, amaxp, c, f, f1, f2, ffm, fm, g, p, p1, p2, p3, p4, q, qn, r, u, v, w, w2, x, x1,
 		x2, xl, xll, xlr, xm, xnp, xnpq, xr, ynorm, z, z2;
 
 	/*
@@ -537,16 +537,16 @@ TYPE OF ISEED SHOULD BE DICTATED BY THE UNIFORM GENERATOR
 	m = (int32_t)ffm;
 	fm = m;
 	xnpq = xnp * q;
-	p1 = (int32_t)(2.195 * sqrt(xnpq) - 4.6 * q) + 0.5;
-	xm = fm + 0.5;
+	p1 = (int32_t)(2.195f * sqrtf(xnpq) - 4.6f * q) + 0.5f;
+	xm = fm + 0.5f;
 	xl = xm - p1;
 	xr = xm + p1;
-	c = 0.134 + 20.5 / (15.3 + fm);
+	c = 0.134f + 20.5f / (15.3f + fm);
 	al = (ffm - xl) / (ffm - xl * p);
-	xll = al * (1.0 + 0.5 * al);
+	xll = al * (1.0f + 0.5f * al);
 	al = (xr - ffm) / (xr * q);
-	xlr = al * (1.0 + 0.5 * al);
-	p2 = p1 * (1.0 + c + c);
+	xlr = al * (1.0f + 0.5f * al);
+	p2 = p1 * (1.0f + c + c);
 	p3 = p2 + c / xll;
 	p4 = p3 + c / xlr;
 S30:
@@ -567,8 +567,8 @@ S40:
 	*/
 	if (u > p2) goto S50;
 	x = xl + (u - p1) / c;
-	v = v * c + 1.0 - std::abs(xm - x) / p1;
-	if (v > 1.0 || v <= 0.0) goto S30;
+	v = v * c + 1.0f - std::abs(xm - x) / p1;
+	if (v > 1.0f || v <= 0.0f) goto S30;
 	ix = (int32_t)x;
 	goto S70;
 S50:
@@ -617,8 +617,8 @@ S130:
 	/*
 	SQUEEZING USING UPPER AND LOWER BOUNDS ON ALOG(F(X))
 	*/
-	amaxp = k / xnpq * ((k * (k / 3.0 + 0.625) + 0.1666666666666) / xnpq + 0.5);
-	ynorm = -(k * k / (2.0 * xnpq));
+	amaxp = k / xnpq * ((k * (k / 3.0f + 0.625f) + 0.1666666666666f) / xnpq + 0.5f);
+	ynorm = -(k * k / (2.0f * xnpq));
 	alv = log(v);
 	if (alv < ynorm - amaxp) goto S170;
 	if (alv > ynorm + amaxp) goto S30;
@@ -626,19 +626,19 @@ S130:
 	STIRLING'S FORMULA TO MACHINE ACCURACY FOR
 	THE FINAL ACCEPTANCE/REJECTION TEST
 	*/
-	x1 = ix + 1.0;
-	f1 = fm + 1.0;
-	z = n + 1.0 - fm;
-	w = n - ix + 1.0;
+	x1 = ix + 1.0f;
+	f1 = fm + 1.0f;
+	z = n + 1.0f - fm;
+	w = n - ix + 1.0f;
 	z2 = z * z;
 	x2 = x1 * x1;
 	f2 = f1 * f1;
 	w2 = w * w;
-	if (alv <= xm * log(f1 / x1) + (n - m + 0.5) * log(z / w) + (ix - m) * log(w * p / (x1 * q)) + (13860.0 -
-		(462.0 - (132.0 - (99.0 - 140.0 / f2) / f2) / f2) / f2) / f1 / 166320.0 + (13860.0 - (462.0 -
-		(132.0 - (99.0 - 140.0 / z2) / z2) / z2) / z2) / z / 166320.0 + (13860.0 - (462.0 - (132.0 -
-			(99.0 - 140.0 / x2) / x2) / x2) / x2) / x1 / 166320.0 + (13860.0 - (462.0 - (132.0 - (99.0
-				- 140.0 / w2) / w2) / w2) / w2) / w / 166320.0) goto S170;
+	if (alv <= xm * log(f1 / x1) + (n - m + 0.5f) * log(z / w) + (ix - m) * log(w * p / (x1 * q)) + (13860.0f -
+		(462.0f - (132.0f - (99.0f - 140.0f / f2) / f2) / f2) / f2) / f1 / 166320.0f + (13860.0f - (462.0f -
+		(132.0f - (99.0f - 140.0f / z2) / z2) / z2) / z2) / z / 166320.0f + (13860.0f - (462.0f - (132.0f -
+			(99.0f - 140.0f / x2) / x2) / x2) / x2) / x1 / 166320.0f + (13860.0f - (462.0f - (132.0f - (99.0f
+				- 140.0f / w2) / w2) / w2) / w2) / w / 166320.0f) goto S170;
 	goto S30;
 S140:
 	/*
@@ -1119,7 +1119,7 @@ void SampleWithoutReplacement(int tn, int k, int n)
 	ISSN:0098-3500
 	*/
 
-	double t, r, a, mu, f;
+	float t, r, a, mu, f;
 	int i, j, q, b;
 
 	if (k < 3)
@@ -1176,13 +1176,13 @@ void SampleWithoutReplacement(int tn, int k, int n)
 	else
 	{
 		/* fprintf(stderr,"@%i %i:",k,n); */
-		t = (double)k;
+		t = (float)k;
 		r = sqrt(t);
 		a = sqrt(log(1 + t / 2 * PI));
 		a = a + a * a / (3 * r);
 		mu = t + a * r;
 		b = 2 * MAX_PLACE_SIZE; /* (int) (k+4*a*r); */
-		f = -1 / (log(1 - mu / ((double)n)));
+		f = -1 / (log(1 - mu / ((float)n)));
 		i = q = 0;
 		while (i <= n)
 		{
