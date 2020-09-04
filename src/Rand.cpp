@@ -20,7 +20,7 @@ int **SamplingQueue = nullptr;
 /////////////////////// NEIL rand_lib code (with some Gemma rand lib also)
 ///////////// ********* ///////////// ********* ///////////// ********* ///////////// ********* ///////////// ********* ///////////// *********
 
-double ranf(void)
+float ranf(void)
 {
 	return ranf_mt(OMP_GET_THREAD_NUM);
 }

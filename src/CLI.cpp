@@ -65,7 +65,7 @@ void parse_float(std::string const& input, float& output)
 	try
 	{
 		std::size_t pos;
-		output = std::stod(input, &pos);
+		output = std::stof(input, &pos);
 		if (pos != input.size())
 		{
 			ERR_CRITICAL_FMT("Detected invalid characters after parsed float: %s\n", input.c_str());

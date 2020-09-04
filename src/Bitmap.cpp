@@ -56,7 +56,7 @@ void CaptureBitmap()
 				}
 			}
 		}
-		logMaxPop = log(1.001 * (float)maxPop);
+		logMaxPop = log(1.001f * (float)maxPop);
 		for (int i = 0; i < P.NMC; i++)
 			if (Mcells[i].n > 0)
 			{

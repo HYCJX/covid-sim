@@ -1249,7 +1249,7 @@ void ReadParams(std::string const& ParamFile, std::string const& PreParamFile, s
 		{
 			P.Prop_SARI_ByAge[i] *= P.ScaleIFR;
 			P.Prop_Critical_ByAge[i] *= P.ScaleIFR;
-			P.Prop_ILI_ByAge[i] = 1.0 - P.Prop_Mild_ByAge[i] - P.Prop_SARI_ByAge[i] - P.Prop_Critical_ByAge[i];
+			P.Prop_ILI_ByAge[i] = 1.0f - P.Prop_Mild_ByAge[i] - P.Prop_SARI_ByAge[i] - P.Prop_Critical_ByAge[i];
 		}
 	}
 	if (P.FitIter == 0)
@@ -1664,7 +1664,7 @@ void ReadParams(std::string const& ParamFile, std::string const& PreParamFile, s
 	if (P.DoSocDistOnceOnly) P.DoSocDistOnceOnly = 4;
 
 	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Airport closure effectiveness", "%f", (void*) & (P.AirportCloseEffectiveness), 1, 1, 0)) P.AirportCloseEffectiveness = 0;
-	P.AirportCloseEffectiveness = 1.0 - P.AirportCloseEffectiveness;
+	P.AirportCloseEffectiveness = 1.0f - P.AirportCloseEffectiveness;
 	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Airport closure start time", "%f", (void*) & (P.AirportCloseTimeStartBase), 1, 1, 0)) P.AirportCloseTimeStartBase = USHRT_MAX / P.TimeStepsPerDay;
 	if (!GetInputParameter2(ParamFile_dat, PreParamFile_dat, "Airport closure duration", "%f", (void*) & (P.AirportCloseDuration), 1, 1, 0)) P.AirportCloseDuration = USHRT_MAX / P.TimeStepsPerDay;
 
@@ -2087,7 +2087,7 @@ void ReadParams(std::string const& ParamFile, std::string const& PreParamFile, s
 	{
 		for (i = 0; i <= 1000; i++)
 		{
-			asin2sqx[i] = asin(sqrt(i / 1000.0));
+			asin2sqx[i] = asin(sqrt(i / 1000.0f));
 			asin2sqx[i] = asin2sqx[i] * asin2sqx[i];
 		}
 		for (i = 0; i <= DEGREES_PER_TURN; i++)
@@ -2240,7 +2240,7 @@ void ReadInterventions(std::string const& IntFile)
 						} while ((f) && (au < P.NumAdunits));
 						if (!f)
 						{
-							r = fabs(CurInterv.Level) + (2.0 * ranf() - 1) * CurInterv.LevelAUVar;
+							r = fabs(CurInterv.Level) + (2.0f * ranf() - 1) * CurInterv.LevelAUVar;
 							if ((CurInterv.Level < 1) && (r > 1))
 								r = 1;
 							else if (r < 0)
@@ -2282,7 +2282,7 @@ void ReadInterventions(std::string const& IntFile)
 			{
 				while (GetXMLNode(dat, "C", "countries", buf, 0))
 				{
-					s = (2.0 * ranf() - 1) * CurInterv.LevelCountryVar;
+					s = (2.0f * ranf() - 1) * CurInterv.LevelCountryVar;
 					sscanf(buf, "%s", txt);
 					j = atoi(txt);
 					for (au = 0; au < P.NumAdunits; au++)
@@ -2835,7 +2835,7 @@ void InitModel(int run) // passing run number so we can save run number in the i
 		}
 	}
 
-	for (int i = 0; i < P.NumSeedLocations; i++) NumSeedingInfections_byLocation[i] = (int) (((float) P.NumInitialInfections[i]) * P.InitialInfectionsAdminUnitWeight[i]* P.SeedingScaling +0.5);
+	for (int i = 0; i < P.NumSeedLocations; i++) NumSeedingInfections_byLocation[i] = (int) (((float) P.NumInitialInfections[i]) * P.InitialInfectionsAdminUnitWeight[i]* P.SeedingScaling +0.5f);
 	SeedInfection(0, NumSeedingInfections_byLocation, 0, run);
 	P.ControlPropCasesId = P.PreAlertControlPropCasesId;
 	P.TreatTimeStart = 1e10;
@@ -3918,10 +3918,10 @@ void SaveSummaryResults(std::string const& output_file_base) //// calculates and
 		fprintf(dat, "t\tPropSocDist\tRt\tTG\tSI\tS\tI\tR\tincI\tincC\tMild\tILI\tSARI\tCritical\tCritRecov\tSARIP\tCriticalP\tCritRecovP\tprevQuarNotInfected\tprevQuarNotSymptomatic\tincMild\tincILI\tincSARI\tincCritical\tincCritRecov\tincSARIP\tincCriticalP\tincCritRecovP\tincDeath\tincDeath_ILI\tincDeath_SARI\tincDeath_Critical\tcumMild\tcumILI\tcumSARI\tcumCritical\tcumCritRecov\tcumDeath\tcumDeath_ILI\tcumDeath_SARI\tcumDeath_Critical\t");
 		fprintf(dat, "PropSocDist_v\tRt_v\tTG_v\tSI_v\tS_v\tI_v\tR_v\tincI_v\tincC_v\tMild_v\tILI_v\tSARI_v\tCritical_v\tCritRecov_v\tincMild_v\tincILI_v\tincSARI_v\tincCritical_v\tincCritRecov_v\tincDeath_v\tincDeath_ILI_v\tincDeath_SARI_v\tincDeath_Critical_v\tcumMild_v\tcumILI_v\tcumSARI_v\tcumCritical_v\tcumCritRecov_v\tcumDeath_v\tcumDeath_ILI_v\tcumDeath_SARI_v\tcumDeath_Critical_v\n");
 		float SARI, Critical, CritRecov, incSARI, incCritical, incCritRecov, sc1, sc2,sc3,sc4; //this stuff corrects bed prevalence for exponentially distributed time to test results in hospital
-		sc1 = (P.Mean_TimeToTest > 0) ? exp(-1.0 / P.Mean_TimeToTest) : 0.0;
-		sc2 = (P.Mean_TimeToTest > 0) ? exp(-P.Mean_TimeToTestOffset / P.Mean_TimeToTest) : 0.0;
-		sc3 = (P.Mean_TimeToTest > 0) ? exp(-P.Mean_TimeToTestCriticalOffset / P.Mean_TimeToTest) : 0.0;
-		sc4 = (P.Mean_TimeToTest > 0) ? exp(-P.Mean_TimeToTestCritRecovOffset / P.Mean_TimeToTest) : 0.0;
+		sc1 = (P.Mean_TimeToTest > 0) ? exp(-1.0f / P.Mean_TimeToTest) : 0.0f;
+		sc2 = (P.Mean_TimeToTest > 0) ? exp(-P.Mean_TimeToTestOffset / P.Mean_TimeToTest) : 0.0f;
+		sc3 = (P.Mean_TimeToTest > 0) ? exp(-P.Mean_TimeToTestCriticalOffset / P.Mean_TimeToTest) : 0.0f;
+		sc4 = (P.Mean_TimeToTest > 0) ? exp(-P.Mean_TimeToTestCritRecovOffset / P.Mean_TimeToTest) : 0.0f;
 		incSARI = incCritical = incCritRecov = 0;
 		for (i = 0; i < P.NumSamples; i++)
 		{
@@ -3930,9 +3930,9 @@ void SaveSummaryResults(std::string const& output_file_base) //// calculates and
 				SARI = (TSMean[i].SARI - TSMean[i - 1].SARI) * sc2 + SARI * sc1;
 				Critical = (TSMean[i].Critical - TSMean[i - 1].Critical) * sc3 + Critical * sc1;
 				CritRecov = (TSMean[i].CritRecov - TSMean[i - 1].CritRecov) * sc4 + CritRecov * sc1;
-				incSARI = TSMean[i].incSARI * (1.0 - sc2) + incSARI * sc1;
-				incCritical = TSMean[i].incCritical * (1.0 - sc3) + incCritical * sc1;
-				incCritRecov = TSMean[i].incCritRecov * (1.0 - sc4) + incCritRecov * sc1;
+				incSARI = TSMean[i].incSARI * (1.0f - sc2) + incSARI * sc1;
+				incCritical = TSMean[i].incCritical * (1.0f - sc3) + incCritical * sc1;
+				incCritRecov = TSMean[i].incCritRecov * (1.0f - sc4) + incCritRecov * sc1;
 			}
 			else
 			{
@@ -3994,10 +3994,10 @@ void SaveSummaryResults(std::string const& output_file_base) //// calculates and
 			incSARI_a = (float*)Memory::xcalloc(NUM_AGE_GROUPS, sizeof(float));
 			incCritical_a = (float*)Memory::xcalloc(NUM_AGE_GROUPS, sizeof(float));
 			incCritRecov_a = (float*)Memory::xcalloc(NUM_AGE_GROUPS, sizeof(float));
-			sc1a = (P.Mean_TimeToTest > 0) ? exp(-1.0 / P.Mean_TimeToTest) : 0.0;
-			sc2a = (P.Mean_TimeToTest > 0) ? exp(-P.Mean_TimeToTestOffset / P.Mean_TimeToTest) : 0.0;
-			sc3a = (P.Mean_TimeToTest > 0) ? exp(-P.Mean_TimeToTestCriticalOffset / P.Mean_TimeToTest) : 0.0;
-			sc4a = (P.Mean_TimeToTest > 0) ? exp(-P.Mean_TimeToTestCritRecovOffset / P.Mean_TimeToTest) : 0.0;
+			sc1a = (P.Mean_TimeToTest > 0) ? exp(-1.0f / P.Mean_TimeToTest) : 0.0f;
+			sc2a = (P.Mean_TimeToTest > 0) ? exp(-P.Mean_TimeToTestOffset / P.Mean_TimeToTest) : 0.0f;
+			sc3a = (P.Mean_TimeToTest > 0) ? exp(-P.Mean_TimeToTestCriticalOffset / P.Mean_TimeToTest) : 0.0f;
+			sc4a = (P.Mean_TimeToTest > 0) ? exp(-P.Mean_TimeToTestCritRecovOffset / P.Mean_TimeToTest) : 0.0f;
 			for (i = 0; i < NUM_AGE_GROUPS; i++) incSARI_a[i] = incCritical_a[i] = incCritRecov_a[i] = 0;
 			//// output severity results by age group
 			outname = output_file_base + ".severity.age.xls";
@@ -4053,9 +4053,9 @@ void SaveSummaryResults(std::string const& output_file_base) //// calculates and
 						SARI_a[j] = (TSMean[i].SARI_age[j] - TSMean[i - 1].SARI_age[j]) * sc2a + SARI_a[j] * sc1a;
 						Critical_a[j] = (TSMean[i].Critical_age[j] - TSMean[i - 1].Critical_age[j]) * sc3a + Critical_a[j] * sc1a;
 						CritRecov_a[j] = (TSMean[i].CritRecov_age[j] - TSMean[i - 1].CritRecov_age[j]) * sc4a + CritRecov_a[j] * sc1a;
-						incSARI_a[j] = TSMean[i].incSARI_age[j] * (1.0 - sc2a) + incSARI_a[j] * sc1a;
-						incCritical_a[j] = TSMean[i].incCritical_age[j] * (1.0 - sc3a) + incCritical_a[j] * sc1a;
-						incCritRecov_a[j] = TSMean[i].incCritRecov_age[j] * (1.0 - sc4a) + incCritRecov_a[j] * sc1a;
+						incSARI_a[j] = TSMean[i].incSARI_age[j] * (1.0f - sc2a) + incSARI_a[j] * sc1a;
+						incCritical_a[j] = TSMean[i].incCritical_age[j] * (1.0f - sc3a) + incCritical_a[j] * sc1a;
+						incCritRecov_a[j] = TSMean[i].incCritRecov_age[j] * (1.0f - sc4a) + incCritRecov_a[j] * sc1a;
 					}
 					else
 					{
@@ -4116,10 +4116,10 @@ void SaveSummaryResults(std::string const& output_file_base) //// calculates and
 			incSARI_a = (float*)Memory::xcalloc(MAX_ADUNITS, sizeof(float));
 			incCritical_a = (float*)Memory::xcalloc(MAX_ADUNITS, sizeof(float));
 			incCritRecov_a = (float*)Memory::xcalloc(MAX_ADUNITS, sizeof(float));
-			sc1a = (P.Mean_TimeToTest > 0) ? exp(-1.0 / P.Mean_TimeToTest) : 0.0;
-			sc2a = (P.Mean_TimeToTest > 0) ? exp(-P.Mean_TimeToTestOffset / P.Mean_TimeToTest) : 0.0;
-			sc3a = (P.Mean_TimeToTest > 0) ? exp(-P.Mean_TimeToTestCriticalOffset / P.Mean_TimeToTest) : 0.0;
-			sc4a = (P.Mean_TimeToTest > 0) ? exp(-P.Mean_TimeToTestCritRecovOffset / P.Mean_TimeToTest) : 0.0;
+			sc1a = (P.Mean_TimeToTest > 0) ? exp(-1.0f / P.Mean_TimeToTest) : 0.0f;
+			sc2a = (P.Mean_TimeToTest > 0) ? exp(-P.Mean_TimeToTestOffset / P.Mean_TimeToTest) : 0.0f;
+			sc3a = (P.Mean_TimeToTest > 0) ? exp(-P.Mean_TimeToTestCriticalOffset / P.Mean_TimeToTest) : 0.0f;
+			sc4a = (P.Mean_TimeToTest > 0) ? exp(-P.Mean_TimeToTestCritRecovOffset / P.Mean_TimeToTest) : 0.0f;
 			for (i = 0; i < P.NumAdunits; i++) incSARI_a[i] = incCritical_a[i] = incCritRecov_a[i] = 0;
 			//// output severity results by admin unit
 			outname = output_file_base + ".severity.adunit.xls";
@@ -4175,9 +4175,9 @@ void SaveSummaryResults(std::string const& output_file_base) //// calculates and
 						SARI_a[j] = (TSMean[i].SARI_adunit[j] - TSMean[i - 1].SARI_adunit[j]) * sc2a + SARI_a[j] * sc1a;
 						Critical_a[j] = (TSMean[i].Critical_adunit[j] - TSMean[i - 1].Critical_adunit[j]) * sc3a + Critical_a[j] * sc1a;
 						CritRecov_a[j] = (TSMean[i].CritRecov_adunit[j] - TSMean[i - 1].CritRecov_adunit[j]) * sc4a + CritRecov_a[j] * sc1a;
-						incSARI_a[j] = TSMean[i].incSARI_adunit[j] * (1.0 - sc2a) + incSARI_a[j] * sc1a;
-						incCritical_a[j] = TSMean[i].incCritical_adunit[j] * (1.0 - sc3a) + incCritical_a[j] * sc1a;
-						incCritRecov_a[j] = TSMean[i].incCritRecov_adunit[j] * (1.0 - sc4a) + incCritRecov_a[j] * sc1a;
+						incSARI_a[j] = TSMean[i].incSARI_adunit[j] * (1.0f - sc2a) + incSARI_a[j] * sc1a;
+						incCritical_a[j] = TSMean[i].incCritical_adunit[j] * (1.0f - sc3a) + incCritical_a[j] * sc1a;
+						incCritRecov_a[j] = TSMean[i].incCritRecov_adunit[j] * (1.0f - sc4a) + incCritRecov_a[j] * sc1a;
 					}
 					else
 					{
@@ -5187,7 +5187,7 @@ void CalibrationThresholdCheck(float t,int n)
 				if ((trigAlert > 0) && (P.ModelCalibIteration < 20))
 				{
 					RatioPredictedObserved = ((float)trigAlert)/((float)P.AlertTriggerAfterIntervThreshold);
-					DesiredAccuracy = 1.1 / sqrt((float)P.AlertTriggerAfterIntervThreshold);
+					DesiredAccuracy = 1.1f / sqrt((float)P.AlertTriggerAfterIntervThreshold);
 					if (DesiredAccuracy < 0.05) DesiredAccuracy = 0.05;
 					fprintf(stderr, "\n** %i %f %f | %g / %g \t", P.ModelCalibIteration, t, P.DateTriggerReached_SimTime + P.DateTriggerReached_CalTime - P.Interventions_StartDate_CalTime, P.HolidaysStartDay_SimTime, RatioPredictedObserved);
 					fprintf(stderr, "| %i %i %i %i -> ", trigAlert, trigAlertCases, P.AlertTriggerAfterIntervThreshold, P.CaseOrDeathThresholdBeforeAlert);
@@ -5429,13 +5429,13 @@ void CalcLikelihood(int run, std::string const& DataFile, std::string const& Out
 						}
 						if (NegBinK >= 10000)
 							//prob model and data from same underlying poisson
-							LL += lgamma(2 * (Data[j][i] + ModelValue) + 1) - lgamma(Data[j][i] + ModelValue + 1) - lgamma(Data[j][i] + 1) - lgamma(ModelValue + 1) - (3 * (Data[j][i] + ModelValue) + 1) * log(2);
+							LL += lgammaf(2 * (Data[j][i] + ModelValue) + 1) - lgammaf(Data[j][i] + ModelValue + 1) - lgammaf(Data[j][i] + 1) - lgammaf(ModelValue + 1) - (3 * (Data[j][i] + ModelValue) + 1) * logf(2);
 						else
 						{
 							//neg bin LL (NegBinK=1 implies no over-dispersion. >1 implies more)
-							float knb = 1.0 + ModelValue / kp;
-							float pnb = kp / (1.0 + kp);
-							LL += lgamma(Data[j][i] + knb) - lgamma(Data[j][i] + 1) - lgamma(knb) + knb * log(1.0 - pnb) + Data[j][i] * log(pnb);
+							float knb = 1.0f + ModelValue / kp;
+							float pnb = kp / (1.0f + kp);
+							LL += lgammaf(Data[j][i] + knb) - lgammaf(Data[j][i] + 1) - lgammaf(knb) + knb * logf(1.0 - pnb) + Data[j][i] * logf(pnb);
 						}
 					}
 				}
@@ -5453,12 +5453,12 @@ void CalcLikelihood(int run, std::string const& DataFile, std::string const& Out
 					float ModelValue;
 					for (int k = offset; k < day; k++) // loop over all days of infection up to day of sample
 					{
-						float prob_seroconvert = P.SeroConvMaxSens*(1.0-0.5*((exp(-((float)(day - k))*P.SeroConvP1) + 1.0)*exp(-((float)(day - k))*P.SeroConvP2))); // add P1 to P2 to prevent degeneracy
+						float prob_seroconvert = P.SeroConvMaxSens*(1.0f-0.5f*((exp(-((float)(day - k))*P.SeroConvP1) + 1.0f)*exp(-((float)(day - k))*P.SeroConvP2))); // add P1 to P2 to prevent degeneracy
 						ModelValue += c * TimeSeries[k - offset].incI * prob_seroconvert;
 					}
-					ModelValue += c * TimeSeries[day-offset].S * (1.0 - P.SeroConvSpec);
+					ModelValue += c * TimeSeries[day-offset].S * (1.0f - P.SeroConvSpec);
 					ModelValue /= ((float)P.PopSize);
-					LL += m * log((ModelValue + 1e-20)/(m/N+1e-20)) + (N - m) * log((1.0 - ModelValue + 1e-20)/(1.0-m/N+1e-20));  // subtract saturated likelihood
+					LL += m * log((ModelValue + 1e-20)/(m/N+1e-20)) + (N - m) * log((1.0f - ModelValue + 1e-20)/(1.0-m/N+1e-20));  // subtract saturated likelihood
 				}
 			}
 		}
