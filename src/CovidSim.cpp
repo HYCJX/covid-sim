@@ -415,9 +415,18 @@ int main(int argc, char* argv[])
 			Bitmap_Finalise();
 
 			// Print Infect Sweep time information:
-			fprintf(stderr, "\nInfectSweep is called %d times.\n", turn);
-			fprintf(stderr, "\nTotal time of running InfectSweep: %f.\n", total_time);
-			fprintf(stderr, "\nAverage time of running InfectSweep: %f.\n", total_time / (double) turn);
+            std::ofstream myfile("Timing.txt", std::ios_base::app | std::ios_base::out);
+            if (myfile.is_open())
+            {
+                myfile << std::fixed << std::setprecision(6) << "\nInfectSweep is called " << turn << " times.\n";
+                myfile << "\nTotal time of running InfectSweep: " << total_time << ".\n";
+                myfile << std::fixed << std::setprecision(6) << "\nAverage time of running InfectSweep: " << (total_time / (double) turn) << ".\n";
+                myfile.close();
+            }
+            else std::cout << "Unable to open file";
+//			fprintf(stderr, "\nInfectSweep is called %d times.\n", turn);
+//			fprintf(stderr, "\nTotal time of running InfectSweep: %f.\n", total_time);
+//			fprintf(stderr, "\nAverage time of running InfectSweep: %f.\n", total_time / (double) turn);
 
 			fprintf(stderr, "Extinction in %i out of %i runs\n", P.NRactE, P.NRactNE + P.NRactE);
 			fprintf(stderr, "Model ran in %lf seconds\n", ((double)(clock() - cl)) / CLOCKS_PER_SEC);
