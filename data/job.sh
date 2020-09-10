@@ -3,7 +3,7 @@
 # shellcheck disable=SC2039
 # shellcheck disable=SC2034
 
-for i in {1..10}; do
+for i in {1..8}; do
   mkdir t"$i"
   for ((n=0;n<9;n++))
   do
