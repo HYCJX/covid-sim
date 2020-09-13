@@ -1,7 +1,7 @@
 #ifndef COVIDSIM_TEST_KERNEL_CUH
 #define COVIDSIM_TEST_KERNEL_CUH
 
-#include "../../../../../usr/include/c++/7/iostream"
+#include <iostream>
 
 #include "Models/Cell.h"
 #include "Models/Person.h"
@@ -45,5 +45,8 @@ void test_static_data();
 
 // Integration Test:
 void test_all(Cell *c);
+
+// Integration CudaMalloc Test:
+void test_all_malloc(struct Person *&Hosts_GPU, struct PersonQuarantine *&HostsQuarantine_GPU, struct Household *&Households_GPU, struct Microcell *&Mcells_GPU, struct Place **&Places_GPU, struct AdminUnit *&AdUnits_GPU, int **&SamplingQueue_GPU, struct PopVar *&StateT_GPU, struct Param *&P_GPU, struct Data *&data);
 
 #endif //COVIDSIM_TEST_KERNEL_CUH

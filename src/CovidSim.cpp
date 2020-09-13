@@ -31,6 +31,7 @@
 #include "Memory.h"
 #include "CLI.h"
 #include "Sweep_gpu.cuh"
+#include "Test_Kernel.cuh"
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -290,6 +291,19 @@ int main(int argc, char* argv[])
 	for (auto const& int_file : InterventionFiles)
 		ReadInterventions(int_file);
 
+	// GPU Memory Allocation:
+    struct Person *Hosts_GPU;
+    struct PersonQuarantine *HostsQuarantine_GPU;
+    struct Household *Households_GPU;
+    struct Microcell *Mcells_GPU;
+    struct Place **Places_GPU;
+    struct AdminUnit *AdUnits_GPU;
+    int **SamplingQueue_GPU;
+    struct PopVar *StateT_GPU;
+    struct Param *P_GPU;
+    struct Data *data;
+    Alloc_GPU(Hosts_GPU, HostsQuarantine_GPU, Households_GPU, Mcells_GPU, Places_GPU, AdUnits_GPU, SamplingQueue_GPU, StateT_GPU, P_GPU, data);
+
 	fprintf(stderr, "Model setup in %lf seconds\n", ((double)(clock() - cl)) / CLOCKS_PER_SEC);
 
 
@@ -417,6 +431,7 @@ int main(int argc, char* argv[])
 		}
 	}
 	while (!StopFit);
+	Free_GPU(Hosts_GPU, HostsQuarantine_GPU, Households_GPU, Mcells_GPU, Places_GPU, AdUnits_GPU, SamplingQueue_GPU, StateT_GPU, P_GPU, data);
 }
 
 void parse_bmp_option(std::string const& input) {
