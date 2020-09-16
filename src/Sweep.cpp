@@ -528,7 +528,6 @@ void InfectSweep(double t, int run) //added run number as argument in order to r
 									// loop over sampling queue of potential infectees
 									for (int m = 0; m < n; m++)
 									{
-                                        test_Places(k,l,-1,-1,-1);
                                         // pick potential infectee index i3
 										int i3 = Places[k][l].members[Places[k][l].group_start[i2] + SamplingQueue[tn][m]];
 										// calculate place susceptbility based on infectee (i3), place type (k), timestep (ts)

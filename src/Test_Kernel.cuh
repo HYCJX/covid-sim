@@ -49,4 +49,10 @@ void test_all(Cell *c);
 // Integration CudaMalloc Test:
 void test_all_malloc(struct Person *&Hosts_GPU, struct PersonQuarantine *&HostsQuarantine_GPU, struct Household *&Households_GPU, struct Microcell *&Mcells_GPU, struct Place **&Places_GPU, struct AdminUnit *&AdUnits_GPU, int **&SamplingQueue_GPU, struct PopVar *&StateT_GPU, struct Param *&P_GPU, struct Data *&data);
 
+// Integration CudaMemcpy Test:
+void test_all_memcopy(struct Person *&Hosts_GPU, struct PersonQuarantine *&HostsQuarantine_GPU, struct Household *&Households_GPU, struct Microcell *&Mcells_GPU, struct Place **&Places_GPU, struct AdminUnit *&AdUnits_GPU, int **&SamplingQueue_GPU, struct PopVar *&StateT_GPU, struct Param *&P_GPU);
+
+// Integration CudaMemcpy Back Test:
+void test_all_memcopy2Host(struct Person *&Hosts_GPU, struct PersonQuarantine *&HostsQuarantine_GPU, struct Household *&Households_GPU, struct Microcell *&Mcells_GPU, struct Place **&Places_GPU, struct AdminUnit *&AdUnits_GPU, int **&SamplingQueue_GPU, struct PopVar *&StateT_GPU, struct Param *&P_GPU);
+
 #endif //COVIDSIM_TEST_KERNEL_CUH

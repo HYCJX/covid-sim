@@ -1,4 +1,5 @@
 #include "Test_Kernel.cuh"
+#include "Sweep_gpu.cuh"
 #include "Sweep_gpu_Helper.cuh"
 
 // Error Handling.
@@ -133,7 +134,7 @@ void test_Places(int i, int j, int group_start_i, int group_size_i, int members_
     handle_error(cudaEventRecord(start, 0));
     /* ---                   --- */
 
-    struct Place **Struct_Builder = (struct Place **) malloc(P.PlaceTypeNum * sizeof(struct Place *));
+    Struct_Builder = (struct Place **) malloc(P.PlaceTypeNum * sizeof(struct Place *));
     for (int p = 0; p < P.PlaceTypeNum; p++) {
         Struct_Builder[p] = (struct Place *) malloc(P.Nplace[p] * sizeof(struct Place));
         for (int q = 0; q < P.Nplace[p]; q++) {
@@ -153,7 +154,6 @@ void test_Places(int i, int j, int group_start_i, int group_size_i, int members_
         }
     }
     struct Place **Places_GPU;
-    struct Place *Places_Builder[P.PlaceTypeNum];
     handle_error(cudaMalloc((void **) &Places_GPU, P.PlaceTypeNum * sizeof(struct Place *)));
     for (int m = 0; m < P.PlaceTypeNum; m++) {
         handle_error(cudaMalloc((void **) &Places_Builder[m], P.Nplace[m] * sizeof(struct Place)));
@@ -221,7 +221,6 @@ void test_SamplingQueue(int i, int j) {
     /* ---                   --- */
 
     int **SamplingQueue_GPU;
-    int *SamplingQueue_Builder[P.NumThreads];
     handle_error(cudaMalloc((void **) &SamplingQueue_GPU, P.NumThreads * sizeof(int *)));
     for (int i = 0; i < P.NumThreads; i++) {
         handle_error(cudaMalloc((void **) &SamplingQueue_Builder[i],2 * (MAX_PLACE_SIZE + CACHE_LINE_SIZE) * sizeof(int)));
@@ -265,7 +264,7 @@ __global__ void kernel_test_StateT(PopVar *StateT_GPU, int index, int n_queue_in
 
 void test_StateT(int index, int n_queue_index, int cell_inf_index) {
     struct PopVar *StateT_GPU;
-    struct PopVar *StateT_Builder = (struct PopVar *) malloc(P.NumThreads * sizeof(struct PopVar));
+    StateT_Builder = (struct PopVar *) malloc(P.NumThreads * sizeof(struct PopVar));
     memcpy(StateT_Builder, StateT, P.NumThreads * sizeof(struct PopVar));
     for (int i = 0; i < P.NumThreads; i++) {
         for (int j = 0; j < P.NumThreads; j++) {
@@ -411,7 +410,6 @@ void test_all(Cell *c) {
     handle_error(cudaMemcpy(AdUnits_GPU, AdUnits, MAX_ADUNITS * sizeof(struct AdminUnit), cudaMemcpyHostToDevice));
     // SamplingQueue:
     int **SamplingQueue_GPU;
-    int *SamplingQueue_Builder[P.NumThreads];
     handle_error(cudaMalloc((void **) &SamplingQueue_GPU, P.NumThreads * sizeof(int *)));
     for (int i = 0; i < P.NumThreads; i++) {
         handle_error(cudaMalloc((void **) &SamplingQueue_Builder[i], 2 * (MAX_PLACE_SIZE + CACHE_LINE_SIZE) * sizeof(int)));
@@ -497,7 +495,7 @@ void test_all_malloc(struct Person *&Hosts_GPU, struct PersonQuarantine *&HostsQ
     // Mcells:
     handle_error(cudaMalloc((void **) &Mcells_GPU, P.NMC * sizeof(struct Microcell)));
     // Places:
-    struct Place **Struct_Builder = (struct Place **) malloc(P.PlaceTypeNum * sizeof(struct Place *));
+    Struct_Builder = (struct Place **) malloc(P.PlaceTypeNum * sizeof(struct Place *));
     for (int p = 0; p < P.PlaceTypeNum; p++) {
         Struct_Builder[p] = (struct Place *) malloc(P.Nplace[p] * sizeof(struct Place));
         for (int q = 0; q < P.Nplace[p]; q++) {
@@ -505,6 +503,8 @@ void test_all_malloc(struct Person *&Hosts_GPU, struct PersonQuarantine *&HostsQ
             Struct_Builder[p][q] = place;
             handle_error(cudaMalloc((void **) &Struct_Builder[p][q].group_start, place.ng * sizeof(int)));
             handle_error(cudaMalloc((void **) &Struct_Builder[p][q].group_size, place.ng * sizeof(int)));
+            handle_error(cudaMemcpy(Struct_Builder[p][q].group_start, place.group_start, place.ng * sizeof(int), cudaMemcpyHostToDevice));
+            handle_error(cudaMemcpy(Struct_Builder[p][q].group_size, place.group_size, place.ng * sizeof(int), cudaMemcpyHostToDevice));
             if (p == P.HotelPlaceType) {
                 handle_error(cudaMalloc((void **) &Struct_Builder[p][q].members, 2 * ((int)P.PlaceTypeMeanSize[p]) * sizeof(int)));
             } else {
@@ -512,7 +512,6 @@ void test_all_malloc(struct Person *&Hosts_GPU, struct PersonQuarantine *&HostsQ
             }
         }
     }
-    struct Place *Places_Builder[P.PlaceTypeNum];
     handle_error(cudaMalloc((void **) &Places_GPU, P.PlaceTypeNum * sizeof(struct Place *)));
     for (int m = 0; m < P.PlaceTypeNum; m++) {
         handle_error(cudaMalloc((void **) &Places_Builder[m], P.Nplace[m] * sizeof(struct Place)));
@@ -520,18 +519,19 @@ void test_all_malloc(struct Person *&Hosts_GPU, struct PersonQuarantine *&HostsQ
     // AdUnits:
     handle_error(cudaMalloc((void **) &AdUnits_GPU, MAX_ADUNITS * sizeof(struct AdminUnit)));
     // SamplingQueue:
-    int *SamplingQueue_Builder[P.NumThreads];
     handle_error(cudaMalloc((void **) &SamplingQueue_GPU, P.NumThreads * sizeof(int *)));
     for (int i = 0; i < P.NumThreads; i++) {
         handle_error(cudaMalloc((void **) &SamplingQueue_Builder[i], 2 * (MAX_PLACE_SIZE + CACHE_LINE_SIZE) * sizeof(int)));
     }
     // StateT:
-    struct PopVar *StateT_Builder = (struct PopVar *) malloc(P.NumThreads * sizeof(struct PopVar));
+    StateT_Builder = (struct PopVar *) malloc(P.NumThreads * sizeof(struct PopVar));
     for (int i = 0; i < P.NumThreads; i++) {
         for (int j = 0; j < P.NumThreads; j++) {
-            handle_error(cudaMalloc((void **) &(StateT_Builder[i].inf_queue[j]),P.InfQueuePeakLength * sizeof(Infection)));
+            handle_error(cudaMalloc((void **) &(StateT_Builder[i].inf_queue[j]),StateT[i].n_queue[j] * sizeof(Infection)));
+            handle_error(cudaMemcpy(StateT_Builder[i].inf_queue[j], StateT[i].inf_queue[j],StateT[i].n_queue[j] * sizeof(Infection),cudaMemcpyHostToDevice));
         }
         handle_error(cudaMalloc((void **) &StateT_Builder[i].cell_inf, StateT[i].cell_inf_length * sizeof(float)));
+        handle_error(cudaMemcpy(StateT_Builder[i].cell_inf, StateT[i].cell_inf, StateT[i].cell_inf_length * sizeof(float),cudaMemcpyHostToDevice));
         for (int j = 0; j < P.NumAdunits; j++) {
             handle_error(cudaMalloc((void **) &(StateT_Builder[i].dct_queue[j]), AdUnits[j].n * sizeof(ContactEvent)));
         }
@@ -601,3 +601,117 @@ void test_all_malloc(struct Person *&Hosts_GPU, struct PersonQuarantine *&HostsQ
     handle_error(cudaEventDestroy(stop));
     /* ---                  --- */
 }
+
+
+/* Integration CudaMemcpy Test */
+void test_all_memcopy(struct Person *&Hosts_GPU, struct PersonQuarantine *&HostsQuarantine_GPU, struct Household *&Households_GPU, struct Microcell *&Mcells_GPU, struct Place **&Places_GPU, struct AdminUnit *&AdUnits_GPU, int **&SamplingQueue_GPU, struct PopVar *&StateT_GPU, struct Param *&P_GPU) {
+    /* --- Start Time Record --- */
+    cudaEvent_t start, stop;
+    handle_error(cudaEventCreate(&start));
+    handle_error(cudaEventCreate(&stop));
+    handle_error(cudaEventRecord(start, 0));
+    /* ---                   --- */
+
+    /* --- Copy Data: Host to Device --- */
+    // Rand global variables:
+    handle_error(cudaMemcpyToSymbol(Xcg1_GPU, Xcg1, (MAX_NUM_THREADS * CACHE_LINE_SIZE) * sizeof(int32_t)));
+    handle_error(cudaMemcpyToSymbol(Xcg2_GPU, Xcg2, (MAX_NUM_THREADS * CACHE_LINE_SIZE) * sizeof(int32_t)));
+    // Hosts:
+    handle_error(cudaMemcpy(Hosts_GPU, Hosts, P.PopSize * sizeof(struct Person), cudaMemcpyHostToDevice));
+    // HostsQuarantine:
+    handle_error(cudaMemcpy(HostsQuarantine_GPU, &HostsQuarantine[0], HostsQuarantine.size() * sizeof(struct PersonQuarantine), cudaMemcpyHostToDevice));
+    // Households:
+    handle_error(cudaMemcpy(Households_GPU, Households, P.NH * sizeof(struct Household), cudaMemcpyHostToDevice));
+    // Mcells:
+    handle_error(cudaMemcpy(Mcells_GPU, Mcells, P.NMC * sizeof(struct Microcell), cudaMemcpyHostToDevice));
+    // Places:
+    for (int p = 0; p < P.PlaceTypeNum; p++) {
+        for (int q = 0; q < P.Nplace[p]; q++) {
+            Place place = Places[p][q];
+            Struct_Builder[p][q].n = place.n;
+            Struct_Builder[p][q].mcell = place.mcell;
+            Struct_Builder[p][q].loc = place.loc;
+            if (p == P.HotelPlaceType) {
+                handle_error(cudaMemcpy(Struct_Builder[p][q].members, place.members, 2 * ((int)P.PlaceTypeMeanSize[p]) * sizeof(int), cudaMemcpyHostToDevice));
+            } else {
+                handle_error(cudaMemcpy(Struct_Builder[p][q].members, place.members, place.n * sizeof(int), cudaMemcpyHostToDevice));
+            }
+        }
+    }
+    for (int m = 0; m < P.PlaceTypeNum; m++) {
+        handle_error(cudaMemcpy(Places_Builder[m], Struct_Builder[m], P.Nplace[m] * sizeof(struct Place), cudaMemcpyHostToDevice));
+    }
+    handle_error(cudaMemcpy(Places_GPU, Places_Builder, P.PlaceTypeNum * sizeof(struct Place *),cudaMemcpyHostToDevice));
+    // AdUnits:
+    handle_error(cudaMemcpy(AdUnits_GPU, AdUnits, MAX_ADUNITS * sizeof(struct AdminUnit), cudaMemcpyHostToDevice));
+    // SamplingQueue:
+    for (int i = 0; i < P.NumThreads; i++) {
+        handle_error(cudaMemcpy(SamplingQueue_Builder[i], SamplingQueue[i], 2 * (MAX_PLACE_SIZE + CACHE_LINE_SIZE) * sizeof(int), cudaMemcpyHostToDevice));
+    }
+    handle_error(cudaMemcpy(SamplingQueue_GPU, SamplingQueue_Builder, P.NumThreads * sizeof(int *), cudaMemcpyHostToDevice));
+    // StateT:
+    for (int i = 0; i < P.NumThreads; i++) {
+        memcpy(StateT_Builder[i].n_queue, StateT[i].n_queue, MAX_NUM_THREADS * sizeof(int));
+        memcpy(StateT_Builder[i].ndct_queue, StateT[i].ndct_queue, MAX_ADUNITS * sizeof(int));
+        for (int j = 0; j < P.NumAdunits; j++) {
+            handle_error(cudaMemcpy(StateT_Builder[i].dct_queue[j], StateT[i].dct_queue[j], StateT[i].ndct_queue[j] * sizeof(ContactEvent), cudaMemcpyHostToDevice));
+        }
+    }
+    handle_error(cudaMemcpy(StateT_GPU, StateT_Builder, P.NumThreads * sizeof(struct PopVar),cudaMemcpyHostToDevice));
+    // P:
+    handle_error(cudaMemcpy(P_GPU, &P, sizeof(struct Param), cudaMemcpyHostToDevice));
+    /* ---                           --- */
+
+    /* --- Stop Time Record --- */
+    handle_error(cudaEventRecord(stop, 0));
+    handle_error(cudaEventSynchronize(stop));
+    float elapsedTime;
+    handle_error(cudaEventElapsedTime(&elapsedTime, start, stop));
+    printf("GPU Copy Time: %3.lf ms.\n", elapsedTime);
+    handle_error(cudaEventDestroy(start));
+    handle_error(cudaEventDestroy(stop));
+    /* ---                  --- */
+}
+
+
+// Integration CudaMemcpy Back Test */
+void test_all_memcopy2Host(struct Person *&Hosts_GPU, struct PersonQuarantine *&HostsQuarantine_GPU, struct Household *&Households_GPU, struct Microcell *&Mcells_GPU, struct Place **&Places_GPU, struct AdminUnit *&AdUnits_GPU, int **&SamplingQueue_GPU, struct PopVar *&StateT_GPU, struct Param *&P_GPU) {
+    /* --- Start Time Record --- */
+    cudaEvent_t start, stop;
+    handle_error(cudaEventCreate(&start));
+    handle_error(cudaEventCreate(&stop));
+    handle_error(cudaEventRecord(start, 0));
+    /* ---                   --- */
+
+    /* --- Copy Data: Device to Host & Free Memory --- */
+    // Hosts:
+    handle_error(cudaMemcpy(Hosts, Hosts_GPU, P.PopSize * sizeof(struct Person), cudaMemcpyDeviceToHost));
+    // SamplingQueue:
+    handle_error(cudaMemcpy(SamplingQueue_Builder, SamplingQueue_GPU, P.NumThreads * sizeof(int *),cudaMemcpyDeviceToHost));
+    for (int i = 0; i < P.NumThreads; i++) {
+        handle_error(cudaMemcpy(SamplingQueue[i], SamplingQueue_Builder[i], 2 * (MAX_PLACE_SIZE + CACHE_LINE_SIZE) * sizeof(int), cudaMemcpyDeviceToHost));
+    }
+    // StateT:
+    handle_error(cudaMemcpy(StateT_Builder, StateT_GPU, P.NumThreads * sizeof(struct PopVar),cudaMemcpyDeviceToHost));
+    for (int i = 0; i < P.NumThreads; i++) {
+        for (int j = 0; j < MAX_NUM_THREADS; j++) {
+            handle_error(cudaMemcpy(StateT[i].inf_queue[j], StateT_Builder[i].inf_queue[j], StateT[i].n_queue[j] * sizeof(Infection), cudaMemcpyDeviceToHost));
+        }
+        memcpy(StateT[i].n_queue, StateT_Builder[i].n_queue, MAX_NUM_THREADS * sizeof(int));
+        for (int j = 0; j < P.NumAdunits; j++) {
+            handle_error(cudaMemcpy(StateT[i].dct_queue[j], StateT_Builder[i].dct_queue[j], StateT[i].ndct_queue[j] * sizeof(ContactEvent), cudaMemcpyDeviceToHost));
+        }
+    }
+    /* ---                                         --- */
+
+    /* --- Stop Time Record --- */
+    handle_error(cudaEventRecord(stop, 0));
+    handle_error(cudaEventSynchronize(stop));
+    float elapsedTime;
+    handle_error(cudaEventElapsedTime(&elapsedTime, start, stop));
+    printf("GPU Copy Time: %3.lf ms.\n", elapsedTime);
+    handle_error(cudaEventDestroy(start));
+    handle_error(cudaEventDestroy(stop));
+    /* ---                  --- */
+}
+
