@@ -25,3 +25,8 @@ tests/*output*/
 *.exe
 *.out
 *.app
+
+# Precision Modelling Files
+Timing.txt
+t*
+.DS_Store
