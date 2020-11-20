@@ -54,7 +54,7 @@ int GetXMLNode(FILE*, const char*, const char*, char*, int);
 void ReadAirTravel(std::string const&, std::string const&);
 void InitModel(int); //adding run number as a parameter for event log: ggilani - 15/10/2014
 void SeedInfection(double, int*, int, int); //adding run number as a parameter for event log: ggilani - 15/10/2014
-int RunModel(int, std::string const&, std::string const&, std::string const&,  struct Person *&Hosts_GPU, struct PersonQuarantine *&HostsQuarantine_GPU, struct Household *&Households_GPU, struct Microcell *&Mcells_GPU, struct Place **&Places_GPU, struct AdminUnit *&AdUnits_GPU, int **&SamplingQueue_GPU, struct PopVar *&StateT_GPU, struct Param *&P_GPU, struct Data *&data);
+int RunModel(int, std::string const&, std::string const&, std::string const&, struct Lock *&Inf_Locks_GPU, struct Lock *&Dct_Locks_GPU, struct Lock *&Rand_Locks_GPU, struct Cell *&CellLookup_GPU, struct Person *&Hosts_GPU, struct PersonQuarantine *&HostsQuarantine_GPU, struct Household *&Households_GPU, struct Microcell *&Mcells_GPU, struct Place **&Places_GPU, struct AdminUnit *&AdUnits_GPU, int **&SamplingQueue_GPU, struct PopVar *&StateT_GPU, struct Param *&P_GPU, struct Data *&data);
 
 void SaveDistribs(std::string const&);
 void SaveOriginDestMatrix(std::string const&); //added function to save origin destination matrix so it can be done separately to the main results: ggilani - 13/02/15
@@ -292,6 +292,10 @@ int main(int argc, char* argv[])
 		ReadInterventions(int_file);
 
 	// GPU Memory Allocation:
+    Lock *Inf_Locks_GPU;
+    Lock *Dct_Locks_GPU;
+    Lock *Rand_Locks_GPU;
+    struct Cell *CellLookup_GPU;
     struct Person *Hosts_GPU;
     struct PersonQuarantine *HostsQuarantine_GPU;
     struct Household *Households_GPU;
@@ -302,7 +306,9 @@ int main(int argc, char* argv[])
     struct PopVar *StateT_GPU;
     struct Param *P_GPU;
     struct Data *data;
-    Alloc_GPU(Hosts_GPU, HostsQuarantine_GPU, Households_GPU, Mcells_GPU, Places_GPU, AdUnits_GPU, SamplingQueue_GPU, StateT_GPU, P_GPU, data);
+    Alloc_GPU(Inf_Locks_GPU, Dct_Locks_GPU, Rand_Locks_GPU,
+    CellLookup_GPU, Hosts_GPU, HostsQuarantine_GPU, Households_GPU, Mcells_GPU,
+              Places_GPU, AdUnits_GPU, SamplingQueue_GPU, StateT_GPU, P_GPU, data);
 
 	fprintf(stderr, "Model setup in %lf seconds\n", ((double)(clock() - cl)) / CLOCKS_PER_SEC);
 
@@ -384,7 +390,7 @@ int main(int argc, char* argv[])
 					}
 					InitModel(i);
 					if (!snapshot_load_file.empty()) LoadSnapshot(snapshot_load_file);
-					ContCalib = RunModel(i, snapshot_save_file, snapshot_load_file, output_file_base, Hosts_GPU, HostsQuarantine_GPU, Households_GPU, Mcells_GPU, Places_GPU, AdUnits_GPU, SamplingQueue_GPU, StateT_GPU, P_GPU, data);
+					ContCalib = RunModel(i, snapshot_save_file, snapshot_load_file, output_file_base, Inf_Locks_GPU, Dct_Locks_GPU, Rand_Locks_GPU, CellLookup_GPU, Hosts_GPU, HostsQuarantine_GPU, Households_GPU, Mcells_GPU, Places_GPU, AdUnits_GPU, SamplingQueue_GPU, StateT_GPU, P_GPU, data);
 				}
 				while (ContCalib);
 				if (!data_file.empty()) CalcLikelihood(i, data_file, output_file_base);
@@ -431,7 +437,7 @@ int main(int argc, char* argv[])
 		}
 	}
 	while (!StopFit);
-	Free_GPU(Hosts_GPU, HostsQuarantine_GPU, Households_GPU, Mcells_GPU, Places_GPU, AdUnits_GPU, SamplingQueue_GPU, StateT_GPU, P_GPU, data);
+	Free_GPU(Inf_Locks_GPU, Dct_Locks_GPU, Rand_Locks_GPU, CellLookup_GPU, Hosts_GPU, HostsQuarantine_GPU, Households_GPU, Mcells_GPU, Places_GPU, AdUnits_GPU, SamplingQueue_GPU, StateT_GPU, P_GPU, data);
 }
 
 void parse_bmp_option(std::string const& input) {
@@ -2994,7 +3000,7 @@ void SeedInfection(double t, int* NumSeedingInfections_byLocation, int rf, int r
 }
 
 
-int RunModel(int run, std::string const& snapshot_save_file, std::string const& snapshot_load_file, std::string const& output_file_base,  struct Person *&Hosts_GPU, struct PersonQuarantine *&HostsQuarantine_GPU, struct Household *&Households_GPU, struct Microcell *&Mcells_GPU, struct Place **&Places_GPU, struct AdminUnit *&AdUnits_GPU, int **&SamplingQueue_GPU, struct PopVar *&StateT_GPU, struct Param *&P_GPU, struct Data *&data)
+int RunModel(int run, std::string const& snapshot_save_file, std::string const& snapshot_load_file, std::string const& output_file_base, struct Lock *&Inf_Locks_GPU, struct Lock *&Dct_Locks_GPU, struct Lock *&Rand_Locks_GPU, struct Cell *&CellLookup_GPU, struct Person *&Hosts_GPU, struct PersonQuarantine *&HostsQuarantine_GPU, struct Household *&Households_GPU, struct Microcell *&Mcells_GPU, struct Place **&Places_GPU, struct AdminUnit *&AdUnits_GPU, int **&SamplingQueue_GPU, struct PopVar *&StateT_GPU, struct Param *&P_GPU, struct Data *&data)
 {
 	int j, k, l, fs, fs2, NumSeedingInfections, NumSeedingInfections_byLocation[MAX_NUM_SEED_LOCATIONS] /*Denotes either Num imported Infections given rate ir, or number false positive "infections"*/;
 	double ir; // infection import rate?;
@@ -3105,7 +3111,7 @@ int RunModel(int run, std::string const& snapshot_save_file, std::string const& 
 							}
 						}
 					}
-					InfectSweep_GPU(t, run, Hosts_GPU, HostsQuarantine_GPU, Households_GPU, Mcells_GPU, Places_GPU, AdUnits_GPU, SamplingQueue_GPU, StateT_GPU, P_GPU, data);
+					InfectSweep_GPU(t, run, Inf_Locks_GPU, Dct_Locks_GPU, Rand_Locks_GPU, CellLookup_GPU, Hosts_GPU, HostsQuarantine_GPU, Households_GPU, Mcells_GPU, Places_GPU, AdUnits_GPU, SamplingQueue_GPU, StateT_GPU, P_GPU, data);
 //					InfectSweep(t, run);  // loops over all infectious people and decides which susceptible people to infect (at household, place and spatial level), and adds them to queue. Then changes each person's various characteristics using DoInfect function.  adding run number as a parameter to infect sweep so we can track run number: ggilani - 15/10/14
 					//// IncubRecoverySweep loops over all infecteds (either latent or infectious). If t is the right time, latent people moved to being infected, and infectious people moved to being clinical cases. Possibly also add them to recoveries or deaths. Add them to hospitalisation & hospitalisation discharge queues.
 					if (!P.DoSI) IncubRecoverySweep(t, run);
