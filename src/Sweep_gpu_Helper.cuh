@@ -10,7 +10,19 @@
 #include "Model.h"
 #include "Param.h"
 #include "Rand.h"
-#include "Sweep_gpu.cuh"
+
+/* ----- CUDA Error Handling ----- */
+void HANDLE_ERROR(cudaError_t error);
+
+/* GPU Lock */
+struct Lock {
+    int *mutex;
+    Lock();
+    ~Lock();
+
+    __device__ void lock();
+    __device__ void unlock();
+};
 
 /* Infect sweep variables */
 struct Data {
@@ -21,11 +33,13 @@ struct Data {
     unsigned short int ts;
     bool need_exit;
     int exit_num;
+    int *infectors_modified;
+    int *ncontracts_increased;
 };
 
 /* Computation Kernel */
 __global__ void
-kernel(double t, int tn, Cell *c, Person *Hosts_GPU, PersonQuarantine *HostsQuarantine_GPU, Household *Households_GPU,
+kernel(double t, struct Lock *Inf_Locks_GPU, struct Lock *Dct_Locks_GPU, struct Lock *Rand_Locks_GPU, Cell *CellLookup_GPU, Person *Hosts_GPU, PersonQuarantine *HostsQuarantine_GPU, Household *Households_GPU,
        Microcell *Mcells_GPU, Place **Places_GPU, AdminUnit *AdUnits_GPU, int **SamplingQueue, PopVar *StateT_GPU,
        Param *P_GPU, Data *data);
 
